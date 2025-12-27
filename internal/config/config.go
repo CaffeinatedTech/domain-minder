@@ -34,6 +34,14 @@ func (c *Config) ServerAddr() string {
 	return fmt.Sprintf(":%d", c.Port)
 }
 
+func (c *Config) CheckIntervalString() string {
+	if c.CheckInterval == 0 {
+		return "0 */6 * * *"
+	}
+	hours := int(c.CheckInterval.Hours())
+	return fmt.Sprintf("0 */%d * * *", hours)
+}
+
 func Load() (*Config, error) {
 	godotenv.Load()
 

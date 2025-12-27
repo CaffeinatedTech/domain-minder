@@ -4,6 +4,8 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/CaffeinatedTech/domain-minder/internal/config"
@@ -11,6 +13,7 @@ import (
 	"github.com/CaffeinatedTech/domain-minder/internal/handlers"
 	"github.com/CaffeinatedTech/domain-minder/internal/middleware"
 	"github.com/CaffeinatedTech/domain-minder/internal/services"
+	"github.com/CaffeinatedTech/domain-minder/internal/services/notifications"
 	"github.com/CaffeinatedTech/domain-minder/internal/templates"
 	"github.com/labstack/echo/v4"
 	echomw "github.com/labstack/echo/v4/middleware"
@@ -31,6 +34,14 @@ func main() {
 	}
 	defer database.Close()
 
+	whoisService := services.NewWHOISService()
+	notificationMgr := notifications.NewNotificationManager(cfg)
+	checker := services.NewChecker(cfg, notificationMgr, whoisService)
+
+	if err := checker.Start(); err != nil {
+		log.Fatalf("Failed to start checker: %v", err)
+	}
+
 	e := echo.New()
 	e.HideBanner = true
 
@@ -50,7 +61,6 @@ func main() {
 	authHandler := handlers.NewAuthHandler(cfg)
 	settingsHandler := handlers.NewSettingsHandler()
 
-	whoisService := services.NewWHOISService()
 	domainHandler := handlers.NewDomainHandler(whoisService)
 
 	e.GET("/register", authHandler.ShowRegister)
@@ -104,6 +114,22 @@ func main() {
 			"Expired":      expired,
 		})
 	})
+
+	protected.POST("/admin/check", func(c echo.Context) error {
+		checker.RunOnce()
+		return c.String(http.StatusOK, "Check triggered")
+	})
+
+	go func() {
+		sigChan := make(chan os.Signal, 1)
+		signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+		<-sigChan
+
+		log.Println("Shutting down...")
+		checker.Stop()
+		database.Close()
+		os.Exit(0)
+	}()
 
 	log.Printf("Starting server on port %d", cfg.Port)
 	if err := e.Start(cfg.ServerAddr()); err != nil {
