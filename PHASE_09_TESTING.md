@@ -326,7 +326,7 @@ import (
     "context"
     "os"
     "testing"
-    "github.com/yourusername/domain-minder/internal/config"
+    "github.com/CaffeinatedTech/domain-minder/internal/config"
 )
 
 func setupTestDB(t *testing.T) {
@@ -477,12 +477,12 @@ import (
     "testing"
     "time"
 
-    "github.com/yourusername/domain-minder/internal/auth"
-    "github.com/yourusername/domain-minder/internal/config"
-    "github.com/yourusername/domain-minder/internal/database"
-    "github.com/yourusername/domain-minder/internal/handlers"
-    "github.com/yourusername/domain-minder/internal/models"
-    "github.com/yourusername/domain-minder/internal/services"
+    "github.com/CaffeinatedTech/domain-minder/internal/auth"
+    "github.com/CaffeinatedTech/domain-minder/internal/config"
+    "github.com/CaffeinatedTech/domain-minder/internal/database"
+    "github.com/CaffeinatedTech/domain-minder/internal/handlers"
+    "github.com/CaffeinatedTech/domain-minder/internal/models"
+    "github.com/CaffeinatedTech/domain-minder/internal/services"
     "github.com/labstack/echo/v4"
     "github.com/labstack/echo/v4/middleware"
 )
@@ -745,9 +745,9 @@ go test ./... -v
 go test ./... -cover
 
 # Output should show:
-# ok    github.com/yourusername/domain-minder/internal/config    0.xxxs  100.0%
-# ok    github.com/yourusername/domain-minder/internal/auth      0.xxxs  100.0%
-# ok    github.com/yourusername/domain-minder/internal/database  0.xxxs  85.0%
+# ok    github.com/CaffeinatedTech/domain-minder/internal/config    0.xxxs  100.0%
+# ok    github.com/CaffeinatedTech/domain-minder/internal/auth      0.xxxs  100.0%
+# ok    github.com/CaffeinatedTech/domain-minder/internal/database  0.xxxs  85.0%
 # ...
 
 # Linting

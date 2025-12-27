@@ -9,7 +9,7 @@ This plan provides a staged implementation roadmap for Domain Minder, a domain e
 ## Phase 1: Project Setup
 
 ### 1.1 Initialize Go Module
-- Create `go.mod` with module name `github.com/yourusername/domain-minder`
+- Create `go.mod` with module name `github.com/CaffeinatedTech/domain-minder`
 - Set Go version to 1.21+
 - Dependencies to add:
   - `github.com/labstack/echo/v4@v4.11.4`

@@ -40,7 +40,7 @@ import (
 
     _ "github.com/mattn/go-sqlite3"
 
-    "github.com/yourusername/domain-minder/internal/config"
+    "github.com/CaffeinatedTech/domain-minder/internal/config"
 )
 
 var DB *sql.DB
@@ -198,7 +198,7 @@ import (
     "fmt"
     "time"
 
-    "github.com/yourusername/domain-minder/internal/models"
+    "github.com/CaffeinatedTech/domain-minder/internal/models"
 )
 
 func CreateUser(ctx context.Context, user *models.User) (int64, error) {
@@ -306,7 +306,7 @@ import (
     "fmt"
     "time"
 
-    "github.com/yourusername/domain-minder/internal/models"
+    "github.com/CaffeinatedTech/domain-minder/internal/models"
 )
 
 func CreateDomain(ctx context.Context, domain *models.Domain) (int64, error) {
@@ -425,7 +425,7 @@ import (
     "fmt"
     "time"
 
-    "github.com/yourusername/domain-minder/internal/models"
+    "github.com/CaffeinatedTech/domain-minder/internal/models"
 )
 
 func CreateNotificationLog(ctx context.Context, log *models.NotificationLog) (int64, error) {

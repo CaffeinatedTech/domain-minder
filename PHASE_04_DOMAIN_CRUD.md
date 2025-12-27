@@ -40,10 +40,10 @@ import (
     "regexp"
     "strconv"
     "time"
-    "github.com/yourusername/domain-minder/internal/database"
-    "github.com/yourusername/domain-minder/internal/middleware"
-    "github.com/yourusername/domain-minder/internal/models"
-    "github.com/yourusername/domain-minder/internal/services"
+    "github.com/CaffeinatedTech/domain-minder/internal/database"
+    "github.com/CaffeinatedTech/domain-minder/internal/middleware"
+    "github.com/CaffeinatedTech/domain-minder/internal/models"
+    "github.com/CaffeinatedTech/domain-minder/internal/services"
     "github.com/labstack/echo/v4"
 )
 
@@ -405,11 +405,11 @@ import (
     "net/http"
     "os"
 
-    "github.com/yourusername/domain-minder/internal/config"
-    "github.com/yourusername/domain-minder/internal/database"
-    "github.com/yourusername/domain-minder/internal/handlers"
-    "github.com/yourusername/domain-minder/internal/middleware"
-    "github.com/yourusername/domain-minder/internal/services"
+    "github.com/CaffeinatedTech/domain-minder/internal/config"
+    "github.com/CaffeinatedTech/domain-minder/internal/database"
+    "github.com/CaffeinatedTech/domain-minder/internal/handlers"
+    "github.com/CaffeinatedTech/domain-minder/internal/middleware"
+    "github.com/CaffeinatedTech/domain-minder/internal/services"
     "github.com/labstack/echo/v4"
     "github.com/labstack/echo/v4/middleware"
 )

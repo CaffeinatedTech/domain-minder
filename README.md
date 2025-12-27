@@ -28,7 +28,7 @@ Never lose a domain to expiry again. Domain Minder monitors your domains and not
 ### Installation
 
 ```bash
-git clone https://github.com/yourusername/domain-minder.git
+git clone https://github.com/CaffeinatedTech/domain-minder.git
 cd domain-minder
 go build -o domain-minder
 ./domain-minder

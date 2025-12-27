@@ -656,8 +656,8 @@ package handlers
 import (
     "net/http"
     "html/template"
-    "github.com/yourusername/domain-minder/internal/middleware"
-    "github.com/yourusername/domain-minder/internal/templates"
+    "github.com/CaffeinatedTech/domain-minder/internal/middleware"
+    "github.com/CaffeinatedTech/domain-minder/internal/templates"
     "github.com/labstack/echo/v4"
 )
 

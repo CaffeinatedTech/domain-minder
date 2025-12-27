@@ -23,7 +23,7 @@ This phase establishes the foundation of the Domain Minder project. You will cre
 Create `go.mod` in `/home/adam/projects/domain-minder/` with:
 
 ```
-module github.com/yourusername/domain-minder
+module github.com/CaffeinatedTech/domain-minder
 
 go 1.21
 
@@ -152,7 +152,7 @@ import (
     "log"
     "os"
 
-    "github.com/yourusername/domain-minder/internal/config"
+    "github.com/CaffeinatedTech/domain-minder/internal/config"
     "github.com/labstack/echo/v4"
     "github.com/labstack/echo/v4/middleware"
 )

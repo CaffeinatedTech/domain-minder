@@ -54,7 +54,7 @@ Never lose a domain to expiry again. Domain Minder monitors your domains and sen
 ### Installation
 
 ```bash
-git clone https://github.com/yourusername/domain-minder.git
+git clone https://github.com/CaffeinatedTech/domain-minder.git
 cd domain-minder
 go build -o domain-minder ./cmd/server/
 ./domain-minder
@@ -429,7 +429,7 @@ Create `/home/adam/projects/domain-minder/docs/DEVELOPMENT.md`:
 
 ```bash
 # Clone repository
-git clone https://github.com/yourusername/domain-minder.git
+git clone https://github.com/CaffeinatedTech/domain-minder.git
 cd domain-minder
 
 # Install dependencies
@@ -594,8 +594,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Basic Echo server setup
 - Database schema
 
-[1.0.0]: https://github.com/yourusername/domain-minder/compare/v0.1.0...v1.0.0
-[0.1.0]: https://github.com/yourusername/domain-minder/releases/tag/v0.1.0
+[1.0.0]: https://github.com/CaffeinatedTech/domain-minder/compare/v0.1.0...v1.0.0
+[0.1.0]: https://github.com/CaffeinatedTech/domain-minder/releases/tag/v0.1.0
 ```
 
 ### 10.9 Create .dockerignore
@@ -728,7 +728,7 @@ After completing this phase, perform these steps manually:
 
 1. Create GitHub repository at https://github.com/new
 2. Initialize git: `git init && git add . && git commit -m "Initial commit"`
-3. Add remote: `git remote add origin https://github.com/yourusername/domain-minder.git`
+3. Add remote: `git remote add origin https://github.com/CaffeinatedTech/domain-minder.git`
 4. Push: `git push -u origin main`
 5. Create release tag: `git tag v1.0.0 && git push origin v1.0.0`
 6. Add screenshots to docs/screenshots/ and update README.md

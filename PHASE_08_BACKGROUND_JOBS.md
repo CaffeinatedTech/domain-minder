@@ -50,10 +50,10 @@ import (
 
     "github.com/robfig/cron/v3"
 
-    "github.com/yourusername/domain-minder/internal/config"
-    "github.com/yourusername/domain-minder/internal/database"
-    "github.com/yourusername/domain-minder/internal/models"
-    "github.com/yourusername/domain-minder/internal/services/notifications"
+    "github.com/CaffeinatedTech/domain-minder/internal/config"
+    "github.com/CaffeinatedTech/domain-minder/internal/database"
+    "github.com/CaffeinatedTech/domain-minder/internal/models"
+    "github.com/CaffeinatedTech/domain-minder/internal/services/notifications"
 )
 
 type Checker struct {
@@ -224,13 +224,13 @@ import (
     "syscall"
     "time"
 
-    "github.com/yourusername/domain-minder/internal/config"
-    "github.com/yourusername/domain-minder/internal/database"
-    "github.com/yourusername/domain-minder/internal/handlers"
-    "github.com/yourusername/domain-minder/internal/middleware"
-    "github.com/yourusername/domain-minder/internal/models"
-    "github.com/yourusername/domain-minder/internal/services"
-    "github.com/yourusername/domain-minder/internal/services/notifications"
+    "github.com/CaffeinatedTech/domain-minder/internal/config"
+    "github.com/CaffeinatedTech/domain-minder/internal/database"
+    "github.com/CaffeinatedTech/domain-minder/internal/handlers"
+    "github.com/CaffeinatedTech/domain-minder/internal/middleware"
+    "github.com/CaffeinatedTech/domain-minder/internal/models"
+    "github.com/CaffeinatedTech/domain-minder/internal/services"
+    "github.com/CaffeinatedTech/domain-minder/internal/services/notifications"
     "github.com/labstack/echo/v4"
     "github.com/labstack/echo/v4/middleware"
 )

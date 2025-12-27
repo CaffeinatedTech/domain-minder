@@ -4,9 +4,10 @@ import (
 	"log"
 	"os"
 
+	"github.com/CaffeinatedTech/domain-minder/internal/config"
+	"github.com/CaffeinatedTech/domain-minder/internal/database"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	"github.com/yourusername/domain-minder/internal/config"
 )
 
 func main() {
@@ -19,6 +20,12 @@ func main() {
 	if err := os.MkdirAll("data", 0755); err != nil {
 		log.Fatalf("Failed to create data directory: %v", err)
 	}
+
+	// Initialize database
+	if err := database.Init(cfg); err != nil {
+		log.Fatalf("Failed to initialize database: %v", err)
+	}
+	defer database.Close()
 
 	e := echo.New()
 	e.HideBanner = true

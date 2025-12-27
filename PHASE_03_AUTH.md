@@ -39,8 +39,8 @@ import (
     "net/http"
     "github.com/labstack/echo/v4"
     "github.com/labstack/echo/v4/middleware"
-    "github.com/yourusername/domain-minder/internal/database"
-    "github.com/yourusername/domain-minder/internal/models"
+    "github.com/CaffeinatedTech/domain-minder/internal/database"
+    "github.com/CaffeinatedTech/domain-minder/internal/models"
 )
 
 const (
@@ -147,7 +147,7 @@ import (
     "net/smtp"
     "context"
     "fmt"
-    "github.com/yourusername/domain-minder/internal/config"
+    "github.com/CaffeinatedTech/domain-minder/internal/config"
 )
 
 var emailTemplates = map[string]string{
@@ -273,10 +273,10 @@ import (
     "net/http"
     "net/url"
     "context"
-    "github.com/yourusername/domain-minder/internal/database"
-    "github.com/yourusername/domain-minder/internal/models"
-    "github.com/yourusername/domain-minder/internal/auth"
-    "github.com/yourusername/domain-minder/internal/config"
+    "github.com/CaffeinatedTech/domain-minder/internal/database"
+    "github.com/CaffeinatedTech/domain-minder/internal/models"
+    "github.com/CaffeinatedTech/domain-minder/internal/auth"
+    "github.com/CaffeinatedTech/domain-minder/internal/config"
     "github.com/labstack/echo/v4"
     "github.com/labstack/echo/v4/middleware"
 )
@@ -506,8 +506,8 @@ package handlers
 
 import (
     "net/http"
-    "github.com/yourusername/domain-minder/internal/database"
-    "github.com/yourusername/domain-minder/internal/middleware"
+    "github.com/CaffeinatedTech/domain-minder/internal/database"
+    "github.com/CaffeinatedTech/domain-minder/internal/middleware"
     "github.com/labstack/echo/v4"
 )
 
@@ -627,10 +627,10 @@ import (
     "net/http"
     "os"
 
-    "github.com/yourusername/domain-minder/internal/config"
-    "github.com/yourusername/domain-minder/internal/database"
-    "github.com/yourusername/domain-minder/internal/handlers"
-    "github.com/yourusername/domain-minder/internal/middleware"
+    "github.com/CaffeinatedTech/domain-minder/internal/config"
+    "github.com/CaffeinatedTech/domain-minder/internal/database"
+    "github.com/CaffeinatedTech/domain-minder/internal/handlers"
+    "github.com/CaffeinatedTech/domain-minder/internal/middleware"
     "github.com/labstack/echo/v4"
     "github.com/labstack/echo/v4/middleware"
 )

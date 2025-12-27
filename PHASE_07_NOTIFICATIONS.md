@@ -65,7 +65,7 @@ import (
     "fmt"
     "net/smtp"
     "strings"
-    "github.com/yourusername/domain-minder/internal/config"
+    "github.com/CaffeinatedTech/domain-minder/internal/config"
 )
 
 type EmailNotifier struct {
@@ -184,7 +184,7 @@ import (
     "fmt"
     "net/http"
     "time"
-    "github.com/yourusername/domain-minder/internal/config"
+    "github.com/CaffeinatedTech/domain-minder/internal/config"
 )
 
 type TelegramNotifier struct {
@@ -303,9 +303,9 @@ import (
     "fmt"
     "log"
     "time"
-    "github.com/yourusername/domain-minder/internal/config"
-    "github.com/yourusername/domain-minder/internal/database"
-    "github.com/yourusername/domain-minder/internal/models"
+    "github.com/CaffeinatedTech/domain-minder/internal/config"
+    "github.com/CaffeinatedTech/domain-minder/internal/database"
+    "github.com/CaffeinatedTech/domain-minder/internal/models"
 )
 
 type NotificationManager struct {
