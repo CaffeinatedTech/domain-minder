@@ -53,6 +53,8 @@ func (h *DomainHandler) ListDomainsPartial(c echo.Context) error {
 		return c.String(http.StatusInternalServerError, "failed to get domains")
 	}
 
+	hideActions := c.QueryParam("hide_actions") == "true"
+
 	domainRows := make([]map[string]interface{}, 0, len(domains))
 	for _, d := range domains {
 		daysLeft := int(time.Until(d.ExpiryDate).Hours() / 24)
@@ -68,7 +70,8 @@ func (h *DomainHandler) ListDomainsPartial(c echo.Context) error {
 	}
 
 	return c.Render(http.StatusOK, "domain_row", map[string]interface{}{
-		"Domains": domainRows,
+		"Domains":     domainRows,
+		"HideActions": hideActions,
 	})
 }
 

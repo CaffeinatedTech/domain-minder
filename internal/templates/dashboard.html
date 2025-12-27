@@ -1,6 +1,7 @@
 {{ define "dashboard" }}
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,6 +9,7 @@
     <script src="https://unpkg.com/htmx.org@2.0.7"></script>
     <link rel="stylesheet" href="/static/style.css">
 </head>
+
 <body>
     <header>
         <div class="container">
@@ -24,7 +26,7 @@
     </header>
     <main class="container">
         <h2>Welcome, {{ .User.Email }}</h2>
-        
+
         <div class="stats-grid">
             <div class="stat-card">
                 <div class="stat-value">{{ .TotalDomains }}</div>
@@ -41,15 +43,17 @@
         </div>
 
         <div class="card">
-            <div class="card-header">
-                <h3>Quick Actions</h3>
+            <div class="card-header"
+                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3>Your Domains</h3>
+                <a href="/domains/new" class="btn btn-small">Add Domain</a>
             </div>
-            <div class="card-body">
-                <a href="/domains/new" class="btn">Add New Domain</a>
-                <a href="/domains" class="btn btn-secondary">View All Domains</a>
+            <div id="domains-list" hx-get="/domains/list?hide_actions=true" hx-trigger="load">
+                <p class="loading">Loading domains...</p>
             </div>
         </div>
     </main>
 </body>
+
 </html>
 {{ end }}

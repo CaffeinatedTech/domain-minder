@@ -7,7 +7,9 @@
             <th>Expiry Date</th>
             <th>Status</th>
             <th>Days Left</th>
+            {{ if not .HideActions }}
             <th>Actions</th>
+            {{ end }}
         </tr>
     </thead>
     <tbody>
@@ -27,6 +29,7 @@
                     <span class="progress-text">{{ .DaysLeft }} days</span>
                 </div>
             </td>
+            {{ if not $.HideActions }}
             <td>
                 <div class="action-buttons">
                     <form method="POST" action="/domains/{{ .Domain.ID }}/check" style="display:inline;">
@@ -41,6 +44,7 @@
                     </form>
                 </div>
             </td>
+            {{ end }}
         </tr>
         {{ else }}
         <tr>
