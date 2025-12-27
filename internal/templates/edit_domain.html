@@ -1,6 +1,7 @@
 {{ define "edit_domain" }}
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,6 +9,7 @@
     <script src="https://unpkg.com/htmx.org@2.0.7"></script>
     <link rel="stylesheet" href="/static/style.css">
 </head>
+
 <body>
     <header>
         <div class="container">
@@ -22,39 +24,48 @@
             </nav>
         </div>
     </header>
-    <main class="container">
+    <main class="container-small">
         <div class="card">
-            <h2>Edit Domain</h2>
-            <form method="POST" action="/domains/{{ .Domain.ID }}">
-                <div class="form-group">
-                    <label>Domain Name</label>
-                    <input type="text" name="name" value="{{ .Domain.Name }}" required>
-                </div>
-                <div class="form-group">
-                    <label>Registrar</label>
-                    <input type="text" name="registrar" value="{{ nullString .Domain.Registrar }}">
-                </div>
-                <div class="form-group">
-                    <label>Expiry Date</label>
-                    <input type="date" name="expiry_date" value="{{ formatDate .Domain.ExpiryDate }}" required>
-                </div>
-                <div class="form-group">
-                    <label>Status</label>
-                    <select name="status">
-                        <option value="active"{{ if eq .Domain.Status "active" }} selected{{ end }}>Active</option>
-                        <option value="expired"{{ if eq .Domain.Status "expired" }} selected{{ end }}>Expired</option>
-                        <option value="pending"{{ if eq .Domain.Status "pending" }} selected{{ end }}>Pending</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Notes</label>
-                    <textarea name="notes" rows="3">{{ nullString .Domain.Notes }}</textarea>
-                </div>
-                <button type="submit" class="btn">Save Changes</button>
-                <a href="/domains" class="btn btn-secondary">Cancel</a>
-            </form>
+            <div class="card-header">
+                <h3>Edit Domain</h3>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="/domains/{{ .Domain.ID }}">
+                    <div class="form-group">
+                        <label>Domain Name</label>
+                        <input type="text" name="name" value="{{ .Domain.Name }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Registrar</label>
+                        <input type="text" name="registrar" value="{{ nullString .Domain.Registrar }}">
+                    </div>
+                    <div class="form-group">
+                        <label>Expiry Date</label>
+                        <input type="date" name="expiry_date" value="{{ formatDate .Domain.ExpiryDate }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Status</label>
+                        <select name="status">
+                            <option value="active" {{ if eq .Domain.Status "active" }} selected{{ end }}>Active</option>
+                            <option value="expired" {{ if eq .Domain.Status "expired" }} selected{{ end }}>Expired
+                            </option>
+                            <option value="pending" {{ if eq .Domain.Status "pending" }} selected{{ end }}>Pending
+                            </option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Notes</label>
+                        <textarea name="notes" rows="3">{{ nullString .Domain.Notes }}</textarea>
+                    </div>
+                    <div style="margin-top: 1.5rem; display: flex; gap: 0.5rem;">
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                        <a href="/domains" class="btn btn-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
         </div>
     </main>
 </body>
+
 </html>
 {{ end }}

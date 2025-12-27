@@ -1,6 +1,7 @@
 {{ define "add_domain" }}
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,6 +9,7 @@
     <script src="https://unpkg.com/htmx.org@2.0.7"></script>
     <link rel="stylesheet" href="/static/style.css">
 </head>
+
 <body>
     <header>
         <div class="container">
@@ -22,22 +24,37 @@
             </nav>
         </div>
     </header>
-    <main class="container">
+    <main class="container-small">
         <div class="card">
-            <h2>Add New Domain</h2>
-            <form method="POST" action="/domains" hx-post="/domains" hx-target="#result" hx-swap="innerHTML">
-                <div class="form-group">
-                    <label>Domain Name</label>
-                    <input type="text" name="name" placeholder="example.com" required>
-                </div>
-                <small>WHOIS lookup will be performed to find expiry date and registrar.</small>
-                <br><br>
-                <button type="submit" class="btn">Add Domain</button>
-                <a href="/domains" class="btn btn-secondary">Cancel</a>
-            </form>
-            <div id="result"></div>
+            <div class="card-header">
+                <h3>Add New Domain</h3>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="/domains" hx-post="/domains" hx-target="#result" hx-swap="innerHTML">
+                    <div class="form-group">
+                        <label>Domain Name</label>
+                        <input type="text" name="name" placeholder="example.com" required>
+                    </div>
+                    <div class="alert alert-info"
+                        style="background: #eff6ff; border: 1px solid #dbeafe; padding: 0.75rem; border-radius: 0.375rem; display: flex; gap: 0.5rem; color: #1e40af; font-size: 0.875rem;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                        </svg>
+                        <span>WHOIS lookup will be performed to find expiry date and registrar.</span>
+                    </div>
+                    <div style="margin-top: 1.5rem; display: flex; gap: 0.5rem;">
+                        <button type="submit" class="btn btn-primary">Add Domain</button>
+                        <a href="/domains" class="btn btn-secondary">Cancel</a>
+                    </div>
+                </form>
+                <div id="result" style="margin-top: 1rem;"></div>
+            </div>
         </div>
     </main>
 </body>
+
 </html>
 {{ end }}
