@@ -16,8 +16,10 @@ func SetupSessionMiddleware(e *echo.Echo, secret string) {
 	store := sessions.NewCookieStore([]byte(secret))
 	store.Options = &sessions.Options{
 		Path:     "/",
-		MaxAge:   86400 * 7,
+		MaxAge:   86400 * 2,
 		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteStrictMode,
 	}
 	e.Use(session.Middleware(store))
 }

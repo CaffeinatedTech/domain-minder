@@ -271,7 +271,13 @@ func (h *DomainHandler) CheckDomain(c echo.Context) error {
 }
 
 func isValidDomain(name string) bool {
-	matched, _ := regexp.MatchString(`^[a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9]*\.[a-zA-Z]{2,}$`, name)
+	if name == "" || len(name) < 4 || len(name) > 253 {
+		return false
+	}
+	matched, err := regexp.MatchString(`^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)+$`, name)
+	if err != nil {
+		return false
+	}
 	return matched
 }
 

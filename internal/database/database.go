@@ -49,6 +49,7 @@ func migrate() error {
             password_hash TEXT NOT NULL,
             email_verified BOOLEAN DEFAULT 0,
             email_verification_token TEXT,
+            email_verification_expires DATETIME,
             telegram_chat_id TEXT,
             notification_email BOOLEAN DEFAULT 1,
             notification_telegram BOOLEAN DEFAULT 0,

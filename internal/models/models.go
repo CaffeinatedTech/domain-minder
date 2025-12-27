@@ -3,17 +3,18 @@ package models
 import "time"
 
 type User struct {
-	ID                     int       `json:"id"`
-	Email                  string    `json:"email"`
-	PasswordHash           string    `json:"-"`
-	EmailVerified          bool      `json:"email_verified"`
-	EmailVerificationToken *string   `json:"-"`
-	TelegramChatID         *string   `json:"telegram_chat_id,omitempty"`
-	NotificationEmail      bool      `json:"notification_email"`
-	NotificationTelegram   bool      `json:"notification_telegram"`
-	NotificationThresholds string    `json:"notification_thresholds"`
-	CreatedAt              time.Time `json:"created_at"`
-	UpdatedAt              time.Time `json:"updated_at"`
+	ID                       int        `json:"id"`
+	Email                    string     `json:"email"`
+	PasswordHash             string     `json:"-"`
+	EmailVerified            bool       `json:"email_verified"`
+	EmailVerificationToken   *string    `json:"-"`
+	EmailVerificationExpires *time.Time `json:"-"`
+	TelegramChatID           *string    `json:"telegram_chat_id,omitempty"`
+	NotificationEmail        bool       `json:"notification_email"`
+	NotificationTelegram     bool       `json:"notification_telegram"`
+	NotificationThresholds   string     `json:"notification_thresholds"`
+	CreatedAt                time.Time  `json:"created_at"`
+	UpdatedAt                time.Time  `json:"updated_at"`
 }
 
 type Domain struct {

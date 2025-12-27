@@ -3,6 +3,7 @@ package handlers
 import (
 	"net/http"
 	"net/url"
+	"time"
 
 	"github.com/CaffeinatedTech/domain-minder/internal/auth"
 	"github.com/CaffeinatedTech/domain-minder/internal/config"
@@ -62,14 +63,16 @@ func (h *AuthHandler) Register(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to generate token")
 	}
 
+	expiresAt := time.Now().Add(24 * time.Hour)
 	user := &models.User{
-		Email:                  email,
-		PasswordHash:           hash,
-		EmailVerified:          false,
-		EmailVerificationToken: &token,
-		NotificationEmail:      true,
-		NotificationTelegram:   false,
-		NotificationThresholds: "[90, 60, 30, 14, 7, 3, 1]",
+		Email:                    email,
+		PasswordHash:             hash,
+		EmailVerified:            false,
+		EmailVerificationToken:   &token,
+		EmailVerificationExpires: &expiresAt,
+		NotificationEmail:        true,
+		NotificationTelegram:     false,
+		NotificationThresholds:   "[90, 60, 30, 14, 7, 3, 1]",
 	}
 
 	id, err := database.CreateUser(c.Request().Context(), user)
@@ -86,7 +89,7 @@ func (h *AuthHandler) Register(c echo.Context) error {
 	}
 
 	sess, _ := session.Get("session", c)
-	sess.Values["user_id"] = user.ID
+	sess.Values = map[interface{}]interface{}{"user_id": user.ID}
 	sess.Save(c.Request(), c.Response())
 
 	return c.Redirect(http.StatusSeeOther, "/dashboard")
@@ -126,7 +129,7 @@ func (h *AuthHandler) Login(c echo.Context) error {
 	}
 
 	sess, _ := session.Get("session", c)
-	sess.Values["user_id"] = user.ID
+	sess.Values = map[interface{}]interface{}{"user_id": user.ID}
 	sess.Save(c.Request(), c.Response())
 
 	return c.Redirect(http.StatusSeeOther, "/dashboard")
@@ -151,6 +154,10 @@ func (h *AuthHandler) VerifyEmail(c echo.Context) error {
 	}
 	if user == nil {
 		return c.Render(http.StatusBadRequest, "login", map[string]interface{}{"Error": "Invalid or expired verification token"})
+	}
+
+	if user.EmailVerificationExpires != nil && time.Now().After(*user.EmailVerificationExpires) {
+		return c.Render(http.StatusBadRequest, "login", map[string]interface{}{"Error": "Verification token has expired"})
 	}
 
 	if err := database.UpdateUserVerification(c.Request().Context(), user.ID, true); err != nil {

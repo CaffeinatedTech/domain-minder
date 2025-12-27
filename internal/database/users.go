@@ -12,10 +12,10 @@ import (
 func CreateUser(ctx context.Context, user *models.User) (int64, error) {
 	result, err := DB.ExecContext(ctx, `
         INSERT INTO users (email, password_hash, email_verified, email_verification_token,
-            telegram_chat_id, notification_email, notification_telegram, notification_thresholds)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            email_verification_expires, telegram_chat_id, notification_email, notification_telegram, notification_thresholds)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `, user.Email, user.PasswordHash, user.EmailVerified, user.EmailVerificationToken,
-		user.TelegramChatID, user.NotificationEmail, user.NotificationTelegram,
+		user.EmailVerificationExpires, user.TelegramChatID, user.NotificationEmail, user.NotificationTelegram,
 		user.NotificationThresholds)
 	if err != nil {
 		return 0, fmt.Errorf("failed to create user: %w", err)
@@ -65,11 +65,11 @@ func GetUserByVerificationToken(ctx context.Context, token string) (*models.User
 	user := &models.User{}
 	err := DB.QueryRowContext(ctx, `
         SELECT id, email, password_hash, email_verified, email_verification_token,
-            telegram_chat_id, notification_email, notification_telegram, notification_thresholds,
+            email_verification_expires, telegram_chat_id, notification_email, notification_telegram, notification_thresholds,
             created_at, updated_at
         FROM users WHERE email_verification_token = ?
     `, token).Scan(&user.ID, &user.Email, &user.PasswordHash, &user.EmailVerified,
-		&user.EmailVerificationToken, &user.TelegramChatID, &user.NotificationEmail,
+		&user.EmailVerificationToken, &user.EmailVerificationExpires, &user.TelegramChatID, &user.NotificationEmail,
 		&user.NotificationTelegram, &user.NotificationThresholds, &user.CreatedAt, &user.UpdatedAt)
 	if err == sql.ErrNoRows {
 		return nil, nil

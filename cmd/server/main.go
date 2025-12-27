@@ -135,10 +135,10 @@ func main() {
 		})
 	})
 
-	protected.POST("/admin/check", func(c echo.Context) error {
-		checker.RunOnce()
-		return c.String(http.StatusOK, "Check triggered")
-	})
+	// protected.POST("/admin/check", func(c echo.Context) error {
+	// 	checker.RunOnce()
+	// 	return c.String(http.StatusOK, "Check triggered")
+	// })
 
 	go func() {
 		sigChan := make(chan os.Signal, 1)
