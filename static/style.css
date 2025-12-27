@@ -478,6 +478,11 @@ small {
     color: #991b1b;
 }
 
+.alert-warning {
+    background-color: #fef3c7;
+    color: #92400e;
+}
+
 .loading {
     display: flex;
     justify-content: center;

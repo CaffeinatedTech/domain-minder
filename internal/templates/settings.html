@@ -43,9 +43,34 @@
                         <div
                             style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.375rem;">
                             {{ if .User.EmailVerified }}
-                            <span style="color: #10b981;">&#10003; Verified</span>
+                            <span
+                                style="color: #10b981; font-weight: 500; display: flex; align-items: center; gap: 0.25rem;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                                </svg>
+                                Verified
+                            </span>
                             {{ else }}
-                            <span style="color: #64748b;">Not Verified</span>
+                            <div
+                                style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                                <span
+                                    style="color: #ef4444; font-weight: 500; display: flex; align-items: center; gap: 0.25rem;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                                    </svg>
+                                    Not Verified
+                                </span>
+                                <a href="/verify/resend"
+                                    style="font-size: 0.75rem; color: #3b82f6; text-decoration: underline;">Resend
+                                    Verification Email</a>
+                            </div>
                             {{ end }}
                         </div>
                     </div>
