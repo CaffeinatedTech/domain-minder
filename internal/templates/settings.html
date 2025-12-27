@@ -90,15 +90,91 @@
                     <form method="POST" action="/settings/thresholds">
                         <div class="form-group">
                             <label>Days before expiry to alert</label>
-                            <input type="text" name="thresholds" value="{{ .User.NotificationThresholds }}"
-                                placeholder="90, 60, 30, 14, 7, 3, 1">
-                            <small>Comma-separated list of days</small>
+                            <input type="hidden" name="thresholds" id="thresholds-hidden"
+                                value="{{ .User.NotificationThresholds }}">
+                            <div class="tag-container" id="tag-container"
+                                onclick="document.getElementById('tag-input').focus()">
+                                <input type="text" class="tag-input" id="tag-input"
+                                    placeholder="Type days and press Enter" onkeydown="handleTagInput(event)">
+                            </div>
+                            <small>Type a number and press Enter to add. Click &times; to remove.</small>
                         </div>
                         <button type="submit" class="btn btn-primary" style="width: 100%;">Save Thresholds</button>
                     </form>
                 </div>
             </div>
         </div>
+    </main>
+    <script>
+        function initTags() {
+            const hiddenInput = document.getElementById('thresholds-hidden');
+            let values = [];
+            try {
+                // Try parsing JSON first
+                values = JSON.parse(hiddenInput.value);
+            } catch (e) {
+                // Fallback to comma-separated
+                values = hiddenInput.value.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n));
+            }
+            // Sort descending
+            values.sort((a, b) => b - a);
+            renderTags(values);
+        }
+
+        function renderTags(values) {
+            const container = document.getElementById('tag-container');
+            const input = document.getElementById('tag-input');
+
+            // Clear existing tags (keep input)
+            const tags = container.querySelectorAll('.tag');
+            tags.forEach(t => t.remove());
+
+            values.forEach(val => {
+                const tag = document.createElement('div');
+                tag.className = 'tag';
+                tag.innerHTML = `
+                    ${val} days
+                    <span class="tag-remove" onclick="removeTag(${val})">&times;</span>
+                `;
+                container.insertBefore(tag, input);
+            });
+
+            // Update hidden input
+            document.getElementById('thresholds-hidden').value = JSON.stringify(values);
+        }
+
+        function handleTagInput(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const input = e.target;
+                const val = parseInt(input.value);
+
+                if (!isNaN(val) && val > 0) {
+                    const hiddenInput = document.getElementById('thresholds-hidden');
+                    let values = JSON.parse(hiddenInput.value || '[]');
+
+                    if (!values.includes(val)) {
+                        values.push(val);
+                        values.sort((a, b) => b - a);
+                        renderTags(values);
+                    }
+                    input.value = '';
+                }
+            }
+        }
+
+        function removeTag(val) {
+            const hiddenInput = document.getElementById('thresholds-hidden');
+            let values = JSON.parse(hiddenInput.value || '[]');
+            values = values.filter(v => v !== val);
+            renderTags(values);
+        }
+
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', initTags);
+    </script>
+    </div>
+    </div>
     </main>
 </body>
 
