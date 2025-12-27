@@ -461,6 +461,18 @@ small {
     align-items: center;
 }
 
+.w-full {
+    width: 100%;
+}
+
+.min-h-screen {
+    min-height: 100vh;
+}
+
+.justify-center {
+    justify-content: center;
+}
+
 .alert {
     padding: 1rem;
     border-radius: 0.375rem;

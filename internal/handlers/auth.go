@@ -176,7 +176,7 @@ func (h *AuthHandler) ResendVerification(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to enqueue verification email")
 	}
 
-	return c.String(http.StatusOK, "Verification email sent")
+	return c.HTML(http.StatusOK, `<span style="color: var(--success); font-weight: 500;">&#10003; Sent!</span>`)
 }
 
 func (h *AuthHandler) buildVerificationURL(c echo.Context, token string) string {

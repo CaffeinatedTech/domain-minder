@@ -31,7 +31,7 @@
                 <strong>Attention:</strong> Your email address is not verified. You will not receive notifications until
                 you verify your email.
             </span>
-            <a href="/verify/resend" class="btn btn-small"
+            <a href="#" hx-get="/verify/resend" hx-swap="outerHTML" class="btn btn-small"
                 style="background-color: white; color: #92400e; border: 1px solid #92400e;">Resend Verification</a>
         </div>
         {{ end }}
