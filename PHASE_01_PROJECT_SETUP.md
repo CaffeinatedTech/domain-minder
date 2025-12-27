@@ -97,7 +97,7 @@ func Load() (*Config, error) {
 
     cfg := &Config{
         DBPath:        getEnv("DB_PATH", "data/domain_minder.db"),
-        Port:          getEnvInt("PORT", 8080),
+        Port:          getEnvInt("PORT", 9000),
         SessionSecret: getEnv("SESSION_SECRET", "change-this-in-production"),
         CheckInterval: getEnvDuration("CHECK_INTERVAL", 6 * time.Hour),
         SMTPConfig: SMTPConfig{
@@ -196,7 +196,7 @@ Create `/home/adam/projects/domain-minder/.env.example`:
 
 ```
 DB_PATH=data/domain_minder.db
-PORT=8080
+PORT=9000
 SESSION_SECRET=your-super-secret-session-key-change-in-production
 CHECK_INTERVAL=6h
 
@@ -224,7 +224,7 @@ Create empty `/home/adam/projects/domain-minder/data/` directory.
 - [ ] `/home/adam/projects/domain-minder/cmd/server/main.go` with basic Echo server
 - [ ] `/home/adam/projects/domain-minder/.env.example` configuration template
 - [ ] Server starts without errors
-- [ ] `curl http://localhost:8080/health` returns "OK"
+- [ ] `curl http://localhost:9000/health` returns "OK"
 
 ## Verification
 
@@ -239,7 +239,7 @@ go build -o domain-minder ./cmd/server/
 sleep 2
 
 # Test health endpoint
-curl http://localhost:8080/health
+curl http://localhost:9000/health
 # Expected: OK
 
 # Kill server

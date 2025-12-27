@@ -87,8 +87,8 @@ func TestLoadDefaults(t *testing.T) {
         t.Errorf("Default DBPath = %v, want data/domain_minder.db", cfg.DBPath)
     }
 
-    if cfg.Port != 8080 {
-        t.Errorf("Default Port = %v, want 8080", cfg.Port)
+    if cfg.Port != 9000 {
+        t.Errorf("Default Port = %v, want 9000", cfg.Port)
     }
 }
 ```

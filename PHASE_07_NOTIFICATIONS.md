@@ -504,13 +504,13 @@ go build -o domain-minder ./cmd/server/
 sleep 2
 
 # Register and login
-curl -X POST http://localhost:8080/register \
+curl -X POST http://localhost:9000/register \
   -d "email=test@example.com&password=test1234&confirm_password=test1234" \
   -c cookies.txt -b cookies.txt -L
 
 # Add a domain expiring soon (manually set date for testing)
 # First add domain
-curl -X POST http://localhost:8080/domains \
+curl -X POST http://localhost:9000/domains \
   -d "name=test-domain.com" \
   -b cookies.txt -L
 
@@ -518,7 +518,7 @@ curl -X POST http://localhost:8080/domains \
 # (In real scenario, WHOIS would set this)
 
 # Test notification check endpoint
-curl -X POST http://localhost:8080/admin/check \
+curl -X POST http://localhost:9000/admin/check \
   -b cookies.txt
 
 # Check notification logs

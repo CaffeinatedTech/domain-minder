@@ -356,20 +356,20 @@ go build -o domain-minder ./cmd/server/
 sleep 2
 
 # Login
-curl -X POST http://localhost:8080/login \
+curl -X POST http://localhost:9000/login \
   -d "email=test@example.com&password=test1234" \
   -c cookies.txt -b cookies.txt -L
 
 # Add a domain (WHOIS lookup should work)
-curl -X POST http://localhost:8080/domains \
+curl -X POST http://localhost:9000/domains \
   -d "name=example.com" \
   -b cookies.txt -L
 
 # Check domain was added with registrar and expiry
-curl http://localhost:8080/domains -b cookies.txt
+curl http://localhost:9000/domains -b cookies.txt
 
 # Test another TLD
-curl -X POST http://localhost:8080/domains \
+curl -X POST http://localhost:9000/domains \
   -d "name=google.com" \
   -b cookies.txt -L
 

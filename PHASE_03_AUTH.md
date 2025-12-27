@@ -751,11 +751,11 @@ go build -o domain-minder ./cmd/server/
 sleep 2
 
 # Test health
-curl http://localhost:8080/health
+curl http://localhost:9000/health
 # Expected: OK
 
 # Test registration
-curl -X POST http://localhost:8080/register \
+curl -X POST http://localhost:9000/register \
   -d "email=test@example.com&password=test1234&confirm_password=test1234" \
   -c cookies.txt -L
 
@@ -763,15 +763,15 @@ curl -X POST http://localhost:8080/register \
 # Note: Will fail if SMTP not configured, but registration should succeed
 
 # Test login
-curl -X POST http://localhost:8080/login \
+curl -X POST http://localhost:9000/login \
   -d "email=test@example.com&password=test1234" \
   -c cookies.txt -b cookies.txt -L
 
 # Test dashboard (should show email verification banner)
-curl http://localhost:8080/dashboard -b cookies.txt
+curl http://localhost:9000/dashboard -b cookies.txt
 
 # Test settings page
-curl http://localhost:8080/settings -b cookies.txt
+curl http://localhost:9000/settings -b cookies.txt
 
 # Cleanup
 pkill -f domain-minder

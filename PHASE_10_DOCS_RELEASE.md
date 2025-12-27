@@ -60,7 +60,7 @@ go build -o domain-minder ./cmd/server/
 ./domain-minder
 ```
 
-Access at http://localhost:8080
+Access at http://localhost:9000
 
 ### Docker
 
@@ -75,7 +75,7 @@ Configure via environment variables:
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `DB_PATH` | SQLite database file path | `data/domain_minder.db` |
-| `PORT` | Server port | `8080` |
+| `PORT` | Server port | `9000` |
 | `SESSION_SECRET` | Session encryption key | (required) |
 | `CHECK_INTERVAL` | Domain check frequency | `6h` |
 | `SMTP_HOST` | SMTP server hostname | (optional) |
@@ -89,7 +89,7 @@ Configure via environment variables:
 
 ```bash
 DB_PATH=data/domain_minder.db
-PORT=8080
+PORT=9000
 SESSION_SECRET=your-super-secret-key-change-me
 CHECK_INTERVAL=6h
 
@@ -153,7 +153,7 @@ docker build -t domain-minder .
 # Run container
 docker run -d \
   --name domain-minder \
-  -p 8080:8080 \
+  -p 9000:9000 \
   -v /path/to/data:/app/data \
   -e SESSION_SECRET=your-secret \
   domain-minder
@@ -199,7 +199,7 @@ server {
     ssl_certificate_key /etc/letsencrypt/live/domain-minder.example.com/privkey.pem;
 
     location / {
-        proxy_pass http://localhost:8080;
+        proxy_pass http://localhost:9000;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
     }
@@ -296,14 +296,14 @@ RUN mkdir -p data
 
 # Environment variables (can be overridden)
 ENV DB_PATH=/app/data/domain_minder.db
-ENV PORT=8080
+ENV PORT=9000
 
 # Expose port
-EXPOSE 8080
+EXPOSE 9000
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1
+    CMD wget --no-verbose --tries=1 --spider http://localhost:9000/health || exit 1
 
 # Run application
 ENTRYPOINT ["./domain-minder"]
@@ -322,12 +322,12 @@ services:
     container_name: domain-minder
     restart: unless-stopped
     ports:
-      - "8080:8080"
+      - "9000:9000"
     volumes:
       - ./data:/app/data
     environment:
       - DB_PATH=/app/data/domain_minder.db
-      - PORT=8080
+      - PORT=9000
       - SESSION_SECRET=${SESSION_SECRET:-change-this-secret-in-production}
       - CHECK_INTERVAL=6h
       # Email settings (optional)
@@ -339,7 +339,7 @@ services:
       # Telegram (optional)
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9000/health"]
       interval: 30s
       timeout: 10s
       retries: 3

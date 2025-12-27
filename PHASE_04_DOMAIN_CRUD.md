@@ -541,26 +541,26 @@ go build -o domain-minder ./cmd/server/
 sleep 2
 
 # Login first (using existing test user or register new)
-curl -X POST http://localhost:8080/login \
+curl -X POST http://localhost:9000/login \
   -d "email=test@example.com&password=test1234" \
   -c cookies.txt -b cookies.txt -L
 
 # Test listing domains (should be empty)
-curl http://localhost:8080/domains -b cookies.txt
+curl http://localhost:9000/domains -b cookies.txt
 
 # Test adding a domain
-curl -X POST http://localhost:8080/domains \
+curl -X POST http://localhost:9000/domains \
   -d "name=example.com" \
   -b cookies.txt -L
 
 # Test listing domains again (should show example.com)
-curl http://localhost:8080/domains -b cookies.txt
+curl http://localhost:9000/domains -b cookies.txt
 
 # Test editing a domain
-curl http://localhost:8080/domains/1 -b cookies.txt
+curl http://localhost:9000/domains/1 -b cookies.txt
 
 # Test deleting a domain
-curl -X POST http://localhost:8080/domains/1/delete -b cookies.txt -L
+curl -X POST http://localhost:9000/domains/1/delete -b cookies.txt -L
 
 # Cleanup
 pkill -f domain-minder

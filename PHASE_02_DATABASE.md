@@ -514,7 +514,7 @@ cd /home/adam/projects/domain-minder
 # Create .env file for testing
 cat > .env <<EOF
 DB_PATH=/tmp/domain_minder_test.db
-PORT=8080
+PORT=9000
 SESSION_SECRET=test-secret
 EOF
 

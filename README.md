@@ -34,14 +34,14 @@ go build -o domain-minder
 ./domain-minder
 ```
 
-Then open http://localhost:8080 in your browser.
+Then open http://localhost:9000 in your browser.
 
 ## Configuration
 
 Configure via environment variables or `.env` file:
 
 - `DB_PATH` - SQLite database file path (default: `data/domain_minder.db`)
-- `PORT` - Server port (default: `8080`)
+- `PORT` - Server port (default: `9000`)
 - `SESSION_SECRET` - Secret for session encryption
 - `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` - Email settings
 - `TELEGRAM_BOT_TOKEN` - Telegram bot token

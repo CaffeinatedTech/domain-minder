@@ -720,23 +720,23 @@ go build -o domain-minder ./cmd/server/
 sleep 2
 
 # Register a new user
-curl -X POST http://localhost:8080/register \
+curl -X POST http://localhost:9000/register \
   -d "email=test@example.com&password=test1234&confirm_password=test1234" \
   -c cookies.txt -b cookies.txt -L
 
 # Check dashboard
-curl http://localhost:8080/dashboard -b cookies.txt
+curl http://localhost:9000/dashboard -b cookies.txt
 
 # Add some domains with WHOIS
-curl -X POST http://localhost:8080/domains \
+curl -X POST http://localhost:9000/domains \
   -d "name=example.com" \
   -b cookies.txt -L
 
 # Check domains page for progress bars
-curl http://localhost:8080/domains -b cookies.txt
+curl http://localhost:9000/domains -b cookies.txt
 
 # Test HTMX by checking page loads with HTMX script
-curl http://localhost:8080/dashboard -b cookies.txt | grep -i htmx
+curl http://localhost:9000/dashboard -b cookies.txt | grep -i htmx
 
 # Cleanup
 pkill -f domain-minder

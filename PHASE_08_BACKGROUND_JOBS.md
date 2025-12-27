@@ -366,7 +366,7 @@ sleep 2
 tail -f /tmp/domain-minder.log 2>/dev/null || journalctl -u domain-minder 2>/dev/null || echo "Check server output"
 
 # Trigger manual check
-curl -X POST http://localhost:8080/admin/check \
+curl -X POST http://localhost:9000/admin/check \
   -b cookies.txt -L
 
 # Wait for check to complete (check logs)
