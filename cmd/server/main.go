@@ -13,6 +13,7 @@ import (
 	"github.com/CaffeinatedTech/domain-minder/internal/handlers"
 	"github.com/CaffeinatedTech/domain-minder/internal/middleware"
 	"github.com/CaffeinatedTech/domain-minder/internal/services"
+	"github.com/CaffeinatedTech/domain-minder/internal/services/mailer"
 	"github.com/CaffeinatedTech/domain-minder/internal/services/notifications"
 	"github.com/CaffeinatedTech/domain-minder/internal/templates"
 	"github.com/labstack/echo/v4"
@@ -34,8 +35,12 @@ func main() {
 	}
 	defer database.Close()
 
+	// Services
 	whoisService := services.NewWHOISService()
-	notificationMgr := notifications.NewNotificationManager(cfg)
+	mailerService := mailer.NewService(cfg)
+	mailerService.StartWorker()
+
+	notificationMgr := notifications.NewNotificationManager(cfg, mailerService)
 	checker := services.NewChecker(cfg, notificationMgr, whoisService)
 
 	if err := checker.Start(); err != nil {
@@ -58,7 +63,7 @@ func main() {
 		return c.String(http.StatusOK, "OK")
 	})
 
-	authHandler := handlers.NewAuthHandler(cfg)
+	authHandler := handlers.NewAuthHandler(cfg, mailerService)
 	settingsHandler := handlers.NewSettingsHandler()
 
 	domainHandler := handlers.NewDomainHandler(whoisService)

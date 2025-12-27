@@ -2,18 +2,18 @@ package notifications
 
 import (
 	"context"
-	"fmt"
-	"net/smtp"
 
 	"github.com/CaffeinatedTech/domain-minder/internal/config"
+	"github.com/CaffeinatedTech/domain-minder/internal/services/mailer"
 )
 
 type EmailNotifier struct {
-	cfg *config.Config
+	cfg    *config.Config
+	mailer *mailer.Service
 }
 
-func NewEmailNotifier(cfg *config.Config) *EmailNotifier {
-	return &EmailNotifier{cfg: cfg}
+func NewEmailNotifier(cfg *config.Config, m *mailer.Service) *EmailNotifier {
+	return &EmailNotifier{cfg: cfg, mailer: m}
 }
 
 func (n *EmailNotifier) Name() string {
@@ -29,43 +29,12 @@ func (n *EmailNotifier) Send(ctx context.Context, notification *Notification) er
 }
 
 func (n *EmailNotifier) SendTo(ctx context.Context, toEmail string, notification *Notification) error {
-	if !n.CanSend() {
-		return fmt.Errorf("SMTP not configured")
-	}
-
-	auth := smtp.PlainAuth(
-		"",
-		n.cfg.SMTPConfig.Username,
-		n.cfg.SMTPConfig.Password,
-		n.cfg.SMTPConfig.Host,
-	)
-
-	subject := fmt.Sprintf("Domain %s expires in %d days", notification.DomainName, notification.DaysRemaining)
-
-	body := fmt.Sprintf(`<html>
-<body>
-<h2>Domain Expiry Warning: %s</h2>
-<p>Your domain <strong>%s</strong> registered with <strong>%s</strong></p>
-<p>will expire in <strong>%d days</strong> on %s.</p>
-<p>Log in to your Domain Minder dashboard for more details.</p>
-</body>
-</html>`,
-		notification.DomainName,
+	return n.mailer.EnqueueNotificationEmail(
+		ctx,
+		toEmail,
 		notification.DomainName,
 		notification.Registrar,
-		notification.DaysRemaining,
 		notification.ExpiryDate,
+		notification.DaysRemaining,
 	)
-
-	msg := fmt.Sprintf(
-		"From: %s\r\nTo: %s\r\nSubject: %s\r\nMIME-Version: 1.0\r\nContent-Type: text/html; charset=\"UTF-8\"\r\n\r\n%s",
-		n.cfg.SMTPConfig.From,
-		toEmail,
-		subject,
-		body,
-	)
-
-	addr := fmt.Sprintf("%s:%d", n.cfg.SMTPConfig.Host, n.cfg.SMTPConfig.Port)
-
-	return smtp.SendMail(addr, auth, n.cfg.SMTPConfig.From, []string{toEmail}, []byte(msg))
 }

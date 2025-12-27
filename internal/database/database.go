@@ -85,6 +85,19 @@ func migrate() error {
 		`CREATE INDEX IF NOT EXISTS idx_domains_user_id ON domains(user_id);`,
 		`CREATE INDEX IF NOT EXISTS idx_notification_logs_domain_id ON notification_logs(domain_id);`,
 		`CREATE INDEX IF NOT EXISTS idx_notification_logs_user_id ON notification_logs(user_id);`,
+		`CREATE TABLE IF NOT EXISTS email_queue (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            to_email TEXT NOT NULL,
+            subject TEXT NOT NULL,
+            body TEXT NOT NULL,
+            status TEXT DEFAULT 'pending', -- pending, sent, failed
+            attempts INTEGER DEFAULT 0,
+            last_attempt DATETIME,
+            error_message TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );`,
+		`CREATE INDEX IF NOT EXISTS idx_email_queue_status ON email_queue(status);`,
 	}
 
 	for _, query := range queries {

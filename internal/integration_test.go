@@ -16,6 +16,7 @@ import (
 	"github.com/CaffeinatedTech/domain-minder/internal/middleware"
 	"github.com/CaffeinatedTech/domain-minder/internal/models"
 	"github.com/CaffeinatedTech/domain-minder/internal/services"
+	"github.com/CaffeinatedTech/domain-minder/internal/services/mailer"
 	"github.com/CaffeinatedTech/domain-minder/internal/templates"
 	"github.com/labstack/echo/v4"
 )
@@ -40,7 +41,9 @@ func setupTestEnvironment(t *testing.T) *echo.Echo {
 
 	whoisService := services.NewWHOISService()
 	domainHandler := handlers.NewDomainHandler(whoisService)
-	authHandler := handlers.NewAuthHandler(cfg)
+
+	mailerService := mailer.NewService(cfg)
+	authHandler := handlers.NewAuthHandler(cfg, mailerService)
 
 	e.GET("/register", authHandler.ShowRegister)
 	e.POST("/register", authHandler.Register)

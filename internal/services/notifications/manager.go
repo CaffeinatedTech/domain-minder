@@ -10,6 +10,7 @@ import (
 	"github.com/CaffeinatedTech/domain-minder/internal/config"
 	"github.com/CaffeinatedTech/domain-minder/internal/database"
 	"github.com/CaffeinatedTech/domain-minder/internal/models"
+	"github.com/CaffeinatedTech/domain-minder/internal/services/mailer"
 )
 
 type NotificationManager struct {
@@ -18,10 +19,10 @@ type NotificationManager struct {
 	tgNotifier    *TelegramNotifier
 }
 
-func NewNotificationManager(cfg *config.Config) *NotificationManager {
+func NewNotificationManager(cfg *config.Config, m *mailer.Service) *NotificationManager {
 	return &NotificationManager{
 		cfg:           cfg,
-		emailNotifier: NewEmailNotifier(cfg),
+		emailNotifier: NewEmailNotifier(cfg, m),
 		tgNotifier:    NewTelegramNotifier(cfg),
 	}
 }

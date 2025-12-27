@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/CaffeinatedTech/domain-minder/internal/config"
+	"github.com/CaffeinatedTech/domain-minder/internal/services/mailer"
 	"github.com/CaffeinatedTech/domain-minder/internal/templates"
 	"github.com/labstack/echo/v4"
 )
@@ -32,7 +33,8 @@ func TestShowRegister(t *testing.T) {
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 
-	h := NewAuthHandler(cfg)
+	m := mailer.NewService(cfg)
+	h := NewAuthHandler(cfg, m)
 	if err := h.ShowRegister(c); err != nil {
 		t.Fatalf("ShowRegister() error = %v", err)
 	}
@@ -53,7 +55,8 @@ func TestShowLogin(t *testing.T) {
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 
-	h := NewAuthHandler(cfg)
+	m := mailer.NewService(cfg)
+	h := NewAuthHandler(cfg, m)
 	if err := h.ShowLogin(c); err != nil {
 		t.Fatalf("ShowLogin() error = %v", err)
 	}
@@ -116,7 +119,8 @@ func TestRegisterValidation(t *testing.T) {
 			rec := httptest.NewRecorder()
 			c := e.NewContext(req, rec)
 
-			h := NewAuthHandler(cfg)
+			m := mailer.NewService(cfg)
+			h := NewAuthHandler(cfg, m)
 			h.Register(c)
 
 			if rec.Code != tt.wantStatus {
@@ -157,7 +161,8 @@ func TestLoginValidation(t *testing.T) {
 			rec := httptest.NewRecorder()
 			c := e.NewContext(req, rec)
 
-			h := NewAuthHandler(cfg)
+			m := mailer.NewService(cfg)
+			h := NewAuthHandler(cfg, m)
 			h.Login(c)
 
 			if rec.Code != tt.wantStatus {

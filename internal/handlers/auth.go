@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"context"
 	"net/http"
 	"net/url"
 
@@ -10,16 +9,18 @@ import (
 	"github.com/CaffeinatedTech/domain-minder/internal/database"
 	"github.com/CaffeinatedTech/domain-minder/internal/middleware"
 	"github.com/CaffeinatedTech/domain-minder/internal/models"
+	"github.com/CaffeinatedTech/domain-minder/internal/services/mailer"
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
 )
 
 type AuthHandler struct {
 	config *config.Config
+	mailer *mailer.Service
 }
 
-func NewAuthHandler(cfg *config.Config) *AuthHandler {
-	return &AuthHandler{config: cfg}
+func NewAuthHandler(cfg *config.Config, m *mailer.Service) *AuthHandler {
+	return &AuthHandler{config: cfg, mailer: m}
 }
 
 func (h *AuthHandler) Register(c echo.Context) error {
@@ -74,13 +75,11 @@ func (h *AuthHandler) Register(c echo.Context) error {
 	user.ID = int(id)
 
 	verificationURL := h.buildVerificationURL(c, token)
-	go func() {
-		ctx, cancel := context.WithTimeout(context.Background(), h.config.CheckInterval)
-		defer cancel()
-		if err := auth.SendVerificationEmail(ctx, h.config, email, verificationURL); err != nil {
-			println("Failed to send verification email:", err.Error())
-		}
-	}()
+
+	if err := h.mailer.EnqueueVerificationEmail(c.Request().Context(), email, verificationURL); err != nil {
+		// Log error but don't fail registration
+		println("Failed to enqueue verification email:", err.Error())
+	}
 
 	sess, _ := session.Get("session", c)
 	sess.Values["user_id"] = user.ID
@@ -173,8 +172,8 @@ func (h *AuthHandler) ResendVerification(c echo.Context) error {
 	}
 
 	verificationURL := h.buildVerificationURL(c, token)
-	if err := auth.SendVerificationEmail(c.Request().Context(), h.config, user.Email, verificationURL); err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, "failed to send verification email")
+	if err := h.mailer.EnqueueVerificationEmail(c.Request().Context(), user.Email, verificationURL); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to enqueue verification email")
 	}
 
 	return c.String(http.StatusOK, "Verification email sent")
