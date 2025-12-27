@@ -16,6 +16,9 @@ require (
 	github.com/gorilla/context v1.1.2 // indirect
 	github.com/gorilla/securecookie v1.1.2 // indirect
 	github.com/labstack/gommon v0.4.2 // indirect
+	github.com/likexian/gokit v0.25.15 // indirect
+	github.com/likexian/whois v1.15.6 // indirect
+	github.com/likexian/whois-parser v1.24.20 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect

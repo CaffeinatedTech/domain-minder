@@ -1,14 +1,17 @@
 package services
 
 import (
-	"bufio"
 	"context"
+	"encoding/json"
 	"fmt"
-	"net"
-	"regexp"
+	"io"
+	"net/http"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/likexian/whois"
+	"github.com/likexian/whois-parser"
 )
 
 type WHOISResult struct {
@@ -23,6 +26,7 @@ type WHOISService struct {
 	cache    map[string]*cacheEntry
 	cacheMu  sync.RWMutex
 	cacheTTL time.Duration
+	client   *http.Client
 }
 
 type cacheEntry struct {
@@ -34,6 +38,9 @@ func NewWHOISService() *WHOISService {
 	return &WHOISService{
 		cache:    make(map[string]*cacheEntry),
 		cacheTTL: 24 * time.Hour,
+		client: &http.Client{
+			Timeout: 10 * time.Second,
+		},
 	}
 }
 
@@ -44,21 +51,60 @@ func (s *WHOISService) Lookup(ctx context.Context, domain string) (*WHOISResult,
 		return cached, nil
 	}
 
-	server, err := s.findWhoisServer(domain)
-	if err != nil {
-		result := &WHOISResult{
-			DomainName: domain,
-			Error:      fmt.Errorf("failed to find WHOIS server: %w", err),
+	result := &WHOISResult{
+		DomainName: domain,
+	}
+
+	parts := strings.Split(domain, ".")
+	tld := parts[len(parts)-1]
+
+	rdapData, err := s.lookupRDAP(domain, tld)
+	if err == nil && rdapData != nil {
+		fmt.Printf("WHOIS: Using RDAP for %s\n", domain)
+		result.WHOISRaw = formatRDAPForDisplay(rdapData)
+		result.Registrar = rdapData["registrar_name"]
+		if exp, ok := rdapData["expiry_date"]; ok && exp != "" {
+			result.ExpiryDate, _ = time.Parse("2006-01-02", exp)
 		}
 		s.setCache(domain, result)
 		return result, nil
 	}
+	fmt.Printf("WHOIS: RDAP failed for %s: %v, trying WHOIS\n", domain, err)
 
-	result, err := s.queryWhoisServer(ctx, domain, server)
+	raw, err := s.lookupWhoisServer(domain, tld)
 	if err != nil {
-		result = &WHOISResult{
-			DomainName: domain,
-			Error:      err,
+		result.Error = fmt.Errorf("whois lookup failed: %w", err)
+		s.setCache(domain, result)
+		return result, nil
+	}
+
+	result.WHOISRaw = raw
+
+	parsed, err := whoisparser.Parse(raw)
+	if err != nil {
+		result.Error = fmt.Errorf("whois parse failed: %w", err)
+		s.setCache(domain, result)
+		return result, nil
+	}
+
+	if parsed.Registrar != nil && parsed.Registrar.Name != "" {
+		result.Registrar = parsed.Registrar.Name
+	}
+
+	if parsed.Domain.ExpirationDate != "" {
+		formats := []string{
+			time.RFC3339,
+			"2006-01-02T15:04:05Z",
+			"2006-01-02 15:04:05",
+			"2006-01-02",
+		}
+
+		for _, format := range formats {
+			expiry, err := time.Parse(format, parsed.Domain.ExpirationDate)
+			if err == nil {
+				result.ExpiryDate = expiry
+				break
+			}
 		}
 	}
 
@@ -66,193 +112,181 @@ func (s *WHOISService) Lookup(ctx context.Context, domain string) (*WHOISResult,
 	return result, nil
 }
 
-func (s *WHOISService) findWhoisServer(domain string) (string, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
+func (s *WHOISService) lookupRDAP(domain, tld string) (map[string]string, error) {
+	rdapURL := fmt.Sprintf("https://rdap.org/domain/%s", domain)
+	fmt.Printf("WHOIS: Trying RDAP %s\n", rdapURL)
 
-	dialer := &net.Dialer{}
-	conn, err := dialer.DialContext(ctx, "tcp", "whois.iana.org:43")
+	req, err := http.NewRequest("GET", rdapURL, nil)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	defer conn.Close()
+	req.Header.Set("Accept", "application/json")
 
-	fmt.Fprintf(conn, "%s\r\n", domain)
-	scanner := bufio.NewScanner(conn)
-	server := ""
-	for scanner.Scan() {
-		line := scanner.Text()
-		if strings.HasPrefix(line, "whois:") {
-			server = strings.TrimSpace(strings.TrimPrefix(line, "whois:"))
-			break
-		}
-	}
-	if err := scanner.Err(); err != nil {
-		return "", err
-	}
-
-	if server == "" {
-		return s.getDefaultServer(domain), nil
-	}
-
-	return server, nil
-}
-
-func (s *WHOISService) getDefaultServer(domain string) string {
-	parts := strings.Split(domain, ".")
-	tld := parts[len(parts)-1]
-
-	defaultServers := map[string]string{
-		"com":  "whois.verisign-grs.com",
-		"net":  "whois.verisign-grs.com",
-		"org":  "whois.pir.org",
-		"info": "whois.afilias.net",
-		"io":   "whois.nic.io",
-		"co":   "whois.nic.co",
-		"me":   "whois.nic.me",
-		"us":   "whois.nic.us",
-		"uk":   "whois.nic.uk",
-		"de":   "whois.denic.de",
-		"fr":   "whois.nic.fr",
-		"eu":   "whois.eu",
-		"au":   "whois.auda.org.au",
-		"ca":   "whois.cira.ca",
-		"jp":   "whois.jprs.jp",
-		"cn":   "whois.cnnic.cn",
-		"ru":   "whois.tcinet.ru",
-		"br":   "whois.registro.br",
-		"mx":   "whois.mx",
-		"es":   "whois.red.es",
-		"nl":   "whois.nl",
-		"ch":   "whois.nic.ch",
-		"at":   "whois.nic.at",
-		"be":   "whois.dns.be",
-		"se":   "whois.iis.se",
-		"no":   "whois.norid.no",
-		"dk":   "whois.dk-hostmaster.dk",
-		"fi":   "whois.fi",
-		"pl":   "whois.dns.pl",
-		"cz":   "whois.nic.cz",
-		"hu":   "whois.nic.hu",
-	}
-
-	if server, ok := defaultServers[tld]; ok {
-		return server
-	}
-
-	return "whois.iana.org"
-}
-
-func (s *WHOISService) queryWhoisServer(ctx context.Context, domain, server string) (*WHOISResult, error) {
-	conn, err := net.DialTimeout("tcp", server+":43", 10*time.Second)
+	resp, err := s.client.Do(req.WithContext(context.Background()))
 	if err != nil {
-		return nil, fmt.Errorf("connection failed: %w", err)
+		return nil, err
 	}
-	defer conn.Close()
+	defer resp.Body.Close()
 
-	conn.SetDeadline(time.Now().Add(10 * time.Second))
+	fmt.Printf("WHOIS: RDAP response status: %d\n", resp.StatusCode)
 
-	query := domain
-	if strings.Contains(server, "verisign") {
-		query = "=" + domain
-	}
-
-	if _, err := fmt.Fprintf(conn, "%s\r\n", query); err != nil {
-		return nil, fmt.Errorf("write failed: %w", err)
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("RDAP returned status %d", resp.StatusCode)
 	}
 
-	var response strings.Builder
-	scanner := bufio.NewScanner(conn)
-	for scanner.Scan() {
-		line := scanner.Text()
-		response.WriteString(line)
-		response.WriteString("\r\n")
-		if strings.HasPrefix(line, ">>>") || strings.HasPrefix(line, "--") {
-			break
-		}
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
 	}
 
-	if err := scanner.Err(); err != nil {
-		return nil, fmt.Errorf("read failed: %w", err)
+	var data map[string]interface{}
+	if err := json.Unmarshal(body, &data); err != nil {
+		return nil, err
 	}
 
-	raw := response.String()
+	result := make(map[string]string)
 
-	result := &WHOISResult{
-		DomainName: domain,
-		WHOISRaw:   raw,
+	if registrar := extractRDAPRegistrar(data); registrar != "" {
+		result["registrar_name"] = registrar
 	}
 
-	result.Registrar = s.extractRegistrar(raw)
-	result.ExpiryDate = s.extractExpiryDate(raw)
-
-	return result, nil
-}
-
-func (s *WHOISService) extractRegistrar(raw string) string {
-	patterns := []string{
-		`Registrar:\s*(.+)`,
-		`Registrar Name:\s*(.+)`,
-		`registrar:\s*(.+)`,
-		`Registrar WHOIS Server:\s*(.+)`,
-		`Whois Server:\s*(.+)`,
-	}
-
-	for _, pattern := range patterns {
-		re := regexp.MustCompile(`(?i)` + pattern)
-		matches := re.FindStringSubmatch(raw)
-		if len(matches) > 1 {
-			registrar := strings.TrimSpace(matches[1])
-			if registrar != "" {
-				return registrar
-			}
-		}
-	}
-
-	return ""
-}
-
-func (s *WHOISService) extractExpiryDate(raw string) time.Time {
-	patterns := []string{
-		`Expiry Date:\s*(\d{4}-\d{2}-\d{2})`,
-		`Expiration Date:\s*(\d{4}-\d{2}-\d{2})`,
-		`Domain Expiration Date:\s*(\d{4}-\d{2}-\d{2})`,
-		`expires:\s*(\d{4}-\d{2}-\d{2})`,
-		`Registry Expiry Date:\s*(\d{4}-\d{2}-\d{2})`,
-		`Valid Until:\s*(\d{4}-\d{2}-\d{2})`,
-		`Expiry date:\s*(\d{2}-\w{3}-\d{4})`,
-		`Expiration Date:\s*(\d{2}-\w{3}-\d{4})`,
-		`expires:\s*(\d{2}-\w{3}-\d{4})`,
-		`Expiry Date:\s*(\d{2}/\d{2}/\d{4})`,
-		`Expiration Date:\s*(\d{2}/\d{2}/\d{4})`,
-		`Expiry Date:\s*(\d{4}\.\d{2}\.\d{2})`,
-	}
-
-	for _, pattern := range patterns {
-		re := regexp.MustCompile(`(?i)` + pattern)
-		matches := re.FindStringSubmatch(raw)
-		if len(matches) > 1 {
-			dateStr := strings.TrimSpace(matches[1])
-			if dateStr == "" {
-				continue
-			}
-
-			formats := []string{
-				"2006-01-02",
-				"02-Jan-2006",
-				"02/01/2006",
-				"2006.01.02",
-			}
-
-			for _, format := range formats {
-				if t, err := time.Parse(format, dateStr); err == nil {
-					return t
+	if events, ok := data["events"].([]interface{}); ok {
+		for _, e := range events {
+			if event, ok := e.(map[string]interface{}); ok {
+				if eventName, ok := event["eventAction"].(string); ok {
+					if eventDate, ok := event["eventDate"].(string); ok {
+						if eventName == "expiration" {
+							result["expiry_date"] = eventDate[:10]
+							break
+						}
+					}
 				}
 			}
 		}
 	}
 
-	return time.Time{}
+	if result["registrar_name"] == "" && result["expiry_date"] == "" {
+		return nil, fmt.Errorf("no useful data in RDAP response")
+	}
+
+	return result, nil
+}
+
+func formatRDAPForDisplay(data map[string]string) string {
+	var builder strings.Builder
+	if data["registrar_name"] != "" {
+		builder.WriteString("Registrar: ")
+		builder.WriteString(data["registrar_name"])
+		builder.WriteString("\n")
+	}
+	if data["expiry_date"] != "" {
+		builder.WriteString("Expiry Date: ")
+		builder.WriteString(data["expiry_date"])
+		builder.WriteString("\n")
+	}
+	return builder.String()
+}
+
+func extractRDAPRegistrar(data map[string]interface{}) string {
+	if entities, ok := data["entities"].([]interface{}); ok {
+		for _, e := range entities {
+			if ent, ok := e.(map[string]interface{}); ok {
+				if roles, ok := ent["roles"].([]interface{}); ok {
+					for _, role := range roles {
+						if role == "registrar" {
+							if vcard, ok := ent["vcardArray"].([]interface{}); ok {
+								if len(vcard) > 1 {
+									if items, ok := vcard[1].([]interface{}); ok {
+										for _, item := range items {
+											if row, ok := item.([]interface{}); ok {
+												if len(row) > 3 {
+													if row[0] == "fn" {
+														if name, ok := row[3].(string); ok && name != "" {
+															return name
+														}
+													}
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	return ""
+}
+
+func (s *WHOISService) lookupWhoisServer(domain, tld string) (string, error) {
+	fmt.Printf("WHOIS: Trying WHOIS lookup for TLD %s\n", tld)
+
+	ext := tld
+
+	result, err := whois.Whois(ext)
+	if err != nil {
+		fmt.Printf("WHOIS: IANA lookup for %s failed: %v\n", ext, err)
+	} else {
+		server := extractWhoisServer(result)
+		fmt.Printf("WHOIS: IANA returned server: %s\n", server)
+		if server != "" {
+			return s.queryWithReferral(domain, server)
+		}
+	}
+
+	return "", fmt.Errorf("could not find WHOIS server for %s", tld)
+}
+
+func (s *WHOISService) queryWithReferral(domain, server string) (string, error) {
+	fmt.Printf("WHOIS: Querying %s on %s\n", domain, server)
+
+	result, err := whois.Whois(domain, server)
+	if err != nil {
+		return "", err
+	}
+
+	refServer := extractWhoisServer(result)
+	fmt.Printf("WHOIS: Referral server: %s\n", refServer)
+
+	if refServer != "" && refServer != server {
+		fmt.Printf("WHOIS: Following referral to %s\n", refServer)
+		refResult, err := whois.Whois(domain, refServer)
+		if err == nil {
+			return refResult, nil
+		}
+	}
+
+	return result, nil
+}
+
+func extractWhoisServer(data string) string {
+	tokens := []string{
+		"Registrar WHOIS Server: ",
+		"Whois Server: ",
+		"whois: ",
+	}
+
+	for _, token := range tokens {
+		start := strings.Index(data, token)
+		if start != -1 {
+			start += len(token)
+			end := strings.Index(data[start:], "\n")
+			if end == -1 {
+				end = len(data) - start
+			}
+			server := strings.TrimSpace(data[start : start+end])
+			server = strings.TrimPrefix(server, "http://")
+			server = strings.TrimPrefix(server, "https://")
+			server = strings.TrimPrefix(server, "whois://")
+			if server != "" {
+				return server
+			}
+		}
+	}
+
+	return ""
 }
 
 func (s *WHOISService) getFromCache(domain string) *WHOISResult {

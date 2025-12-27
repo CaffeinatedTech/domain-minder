@@ -106,7 +106,7 @@ func main() {
 	protected.POST("/domains", domainHandler.AddDomain)
 	protected.GET("/domains/:id", domainHandler.ShowEditDomain)
 	protected.POST("/domains/:id", domainHandler.UpdateDomain)
-	protected.DELETE("/domains/:id/delete", domainHandler.DeleteDomain)
+	protected.POST("/domains/:id/delete", domainHandler.DeleteDomain)
 	protected.POST("/domains/:id/check", domainHandler.CheckDomain)
 
 	protected.GET("/dashboard", func(c echo.Context) error {
