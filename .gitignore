@@ -1,0 +1,85 @@
+# Binaries
+domain-minder
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary
+*.test
+
+# Output of go coverage
+*.out
+*.coverprofile
+coverage.html
+coverage.out
+
+# Go workspace
+go.work
+go.work.sum
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*.swn
+*.sublime-workspace
+*.sublime-project
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Data directory
+data/
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Logs
+*.log
+logs/
+*.pid
+*.seed
+
+# Temp files
+*.tmp
+*.temp
+tmp/
+temp/
+
+# Cache
+.cache/
+*.cache/
+vendor/
+
+# Build artifacts
+*.o
+*.a
+*.obj
+*.pyc
+__pycache__/
+node_modules/
+
+# Docker
+.dockerignore
+docker-compose.override.yml
+
+# Backup files
+*~
+*.bak
+*.backup
+*#
