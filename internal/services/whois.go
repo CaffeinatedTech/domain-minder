@@ -11,15 +11,16 @@ import (
 	"time"
 
 	"github.com/likexian/whois"
-	"github.com/likexian/whois-parser"
+	whoisparser "github.com/likexian/whois-parser"
 )
 
 type WHOISResult struct {
-	DomainName string
-	Registrar  string
-	ExpiryDate time.Time
-	WHOISRaw   string
-	Error      error
+	DomainName    string
+	Registrar     string
+	ExpiryDate    time.Time
+	ExpiryMissing bool // true if expiry date couldn't be determined from WHOIS
+	WHOISRaw      string
+	Error         error
 }
 
 type WHOISService struct {
@@ -97,6 +98,13 @@ func (s *WHOISService) Lookup(ctx context.Context, domain string) (*WHOISResult,
 			"2006-01-02T15:04:05Z",
 			"2006-01-02 15:04:05",
 			"2006-01-02",
+			"02-Jan-2006",
+			"January 2, 2006",
+			"02/01/2006",
+			"2006/01/02",
+			"01/02/2006",
+			"2006-01-02T15:04:05-07:00",
+			"2006-01-02T15:04:05.000Z",
 		}
 
 		for _, format := range formats {
@@ -106,6 +114,11 @@ func (s *WHOISService) Lookup(ctx context.Context, domain string) (*WHOISResult,
 				break
 			}
 		}
+	}
+
+	// Mark if expiry date couldn't be determined
+	if result.ExpiryDate.IsZero() {
+		result.ExpiryMissing = true
 	}
 
 	s.setCache(domain, result)

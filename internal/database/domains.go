@@ -11,9 +11,9 @@ import (
 
 func CreateDomain(ctx context.Context, domain *models.Domain) (int64, error) {
 	result, err := DB.ExecContext(ctx, `
-        INSERT INTO domains (user_id, name, registrar, expiry_date, whois_raw, status, notes)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-    `, domain.UserID, domain.Name, domain.Registrar, domain.ExpiryDate, domain.WHOISRaw,
+        INSERT INTO domains (user_id, name, registrar, expiry_date, manual_expiry, whois_raw, status, notes)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `, domain.UserID, domain.Name, domain.Registrar, domain.ExpiryDate, domain.ManualExpiry, domain.WHOISRaw,
 		domain.Status, domain.Notes)
 	if err != nil {
 		return 0, fmt.Errorf("failed to create domain: %w", err)
@@ -24,11 +24,11 @@ func CreateDomain(ctx context.Context, domain *models.Domain) (int64, error) {
 func GetDomainByID(ctx context.Context, id int) (*models.Domain, error) {
 	domain := &models.Domain{}
 	err := DB.QueryRowContext(ctx, `
-        SELECT id, user_id, name, registrar, expiry_date, whois_raw, last_checked,
+        SELECT id, user_id, name, registrar, expiry_date, manual_expiry, whois_raw, last_checked,
             status, notes, created_at, updated_at
         FROM domains WHERE id = ?
     `, id).Scan(&domain.ID, &domain.UserID, &domain.Name, &domain.Registrar,
-		&domain.ExpiryDate, &domain.WHOISRaw, &domain.LastChecked, &domain.Status,
+		&domain.ExpiryDate, &domain.ManualExpiry, &domain.WHOISRaw, &domain.LastChecked, &domain.Status,
 		&domain.Notes, &domain.CreatedAt, &domain.UpdatedAt)
 	if err == sql.ErrNoRows {
 		return nil, nil
@@ -41,7 +41,7 @@ func GetDomainByID(ctx context.Context, id int) (*models.Domain, error) {
 
 func GetDomainsByUserID(ctx context.Context, userID int) ([]*models.Domain, error) {
 	rows, err := DB.QueryContext(ctx, `
-        SELECT id, user_id, name, registrar, expiry_date, whois_raw, last_checked,
+        SELECT id, user_id, name, registrar, expiry_date, manual_expiry, whois_raw, last_checked,
             status, notes, created_at, updated_at
         FROM domains WHERE user_id = ? ORDER BY expiry_date ASC
     `, userID)
@@ -54,7 +54,7 @@ func GetDomainsByUserID(ctx context.Context, userID int) ([]*models.Domain, erro
 	for rows.Next() {
 		domain := &models.Domain{}
 		if err := rows.Scan(&domain.ID, &domain.UserID, &domain.Name, &domain.Registrar,
-			&domain.ExpiryDate, &domain.WHOISRaw, &domain.LastChecked, &domain.Status,
+			&domain.ExpiryDate, &domain.ManualExpiry, &domain.WHOISRaw, &domain.LastChecked, &domain.Status,
 			&domain.Notes, &domain.CreatedAt, &domain.UpdatedAt); err != nil {
 			return nil, err
 		}
@@ -65,7 +65,7 @@ func GetDomainsByUserID(ctx context.Context, userID int) ([]*models.Domain, erro
 
 func GetAllActiveDomains(ctx context.Context) ([]*models.Domain, error) {
 	rows, err := DB.QueryContext(ctx, `
-        SELECT id, user_id, name, registrar, expiry_date, whois_raw, last_checked,
+        SELECT id, user_id, name, registrar, expiry_date, manual_expiry, whois_raw, last_checked,
             status, notes, created_at, updated_at
         FROM domains WHERE status = 'active'
     `)
@@ -78,7 +78,7 @@ func GetAllActiveDomains(ctx context.Context) ([]*models.Domain, error) {
 	for rows.Next() {
 		domain := &models.Domain{}
 		if err := rows.Scan(&domain.ID, &domain.UserID, &domain.Name, &domain.Registrar,
-			&domain.ExpiryDate, &domain.WHOISRaw, &domain.LastChecked, &domain.Status,
+			&domain.ExpiryDate, &domain.ManualExpiry, &domain.WHOISRaw, &domain.LastChecked, &domain.Status,
 			&domain.Notes, &domain.CreatedAt, &domain.UpdatedAt); err != nil {
 			return nil, err
 		}
@@ -89,10 +89,10 @@ func GetAllActiveDomains(ctx context.Context) ([]*models.Domain, error) {
 
 func UpdateDomain(ctx context.Context, domain *models.Domain) error {
 	_, err := DB.ExecContext(ctx, `
-        UPDATE domains SET name = ?, registrar = ?, expiry_date = ?, whois_raw = ?,
+        UPDATE domains SET name = ?, registrar = ?, expiry_date = ?, manual_expiry = ?, whois_raw = ?,
             last_checked = ?, status = ?, notes = ?, updated_at = ?
         WHERE id = ?
-    `, domain.Name, domain.Registrar, domain.ExpiryDate, domain.WHOISRaw,
+    `, domain.Name, domain.Registrar, domain.ExpiryDate, domain.ManualExpiry, domain.WHOISRaw,
 		domain.LastChecked, domain.Status, domain.Notes, time.Now(), domain.ID)
 	return err
 }

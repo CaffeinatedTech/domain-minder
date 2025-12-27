@@ -104,6 +104,7 @@ func main() {
 	protected.GET("/domains/list", domainHandler.ListDomainsPartial)
 	protected.GET("/domains/new", domainHandler.ShowAddDomain)
 	protected.POST("/domains", domainHandler.AddDomain)
+	protected.POST("/domains/confirm", domainHandler.AddDomainConfirm)
 	protected.GET("/domains/:id", domainHandler.ShowEditDomain)
 	protected.POST("/domains/:id", domainHandler.UpdateDomain)
 	protected.POST("/domains/:id/delete", domainHandler.DeleteDomain)

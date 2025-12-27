@@ -89,8 +89,9 @@ func (h *DomainHandler) AddDomain(c echo.Context) error {
 	result, err := h.whoisService.Lookup(c.Request().Context(), domainName)
 	if err != nil {
 		result = &services.WHOISResult{
-			DomainName: domainName,
-			Error:      err,
+			DomainName:    domainName,
+			ExpiryMissing: true,
+			Error:         err,
 		}
 	}
 
@@ -99,23 +100,33 @@ func (h *DomainHandler) AddDomain(c echo.Context) error {
 		registrar = "Unknown"
 	}
 
-	expiryDate := result.ExpiryDate
-	if expiryDate.IsZero() {
-		expiryDate = time.Now().AddDate(1, 0, 0)
+	// If expiry date couldn't be determined, redirect to confirmation page
+	if result.ExpiryMissing || result.ExpiryDate.IsZero() {
+		whoisRaw := ""
+		if result.WHOISRaw != "" {
+			whoisRaw = result.WHOISRaw
+		}
+		return c.Render(http.StatusOK, "add_domain_confirm", map[string]interface{}{
+			"DomainName": domainName,
+			"Registrar":  registrar,
+			"WHOISRaw":   whoisRaw,
+		})
 	}
 
+	expiryDate := result.ExpiryDate
 	whoisRaw := ""
 	if result.WHOISRaw != "" {
 		whoisRaw = result.WHOISRaw
 	}
 
 	domain := &models.Domain{
-		UserID:     user.ID,
-		Name:       domainName,
-		Registrar:  &registrar,
-		ExpiryDate: expiryDate,
-		WHOISRaw:   &whoisRaw,
-		Status:     "active",
+		UserID:       user.ID,
+		Name:         domainName,
+		Registrar:    &registrar,
+		ExpiryDate:   expiryDate,
+		ManualExpiry: false,
+		WHOISRaw:     &whoisRaw,
+		Status:       "active",
 	}
 
 	_, err = database.CreateDomain(c.Request().Context(), domain)
@@ -123,12 +134,50 @@ func (h *DomainHandler) AddDomain(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to create domain")
 	}
 
-	message := "Domain added successfully"
-	if result.Error != nil {
-		message += " (WHOIS lookup failed, default expiry date set)"
+	return c.Redirect(http.StatusSeeOther, "/domains?message="+url.QueryEscape("Domain added successfully"))
+}
+
+// AddDomainConfirm handles the confirmation form when WHOIS didn't return an expiry date
+func (h *DomainHandler) AddDomainConfirm(c echo.Context) error {
+	user := middleware.GetCurrentUser(c)
+	if user == nil {
+		return echo.NewHTTPError(http.StatusUnauthorized, "not authenticated")
 	}
 
-	return c.Redirect(http.StatusSeeOther, "/domains?message="+url.QueryEscape(message))
+	domainName := c.FormValue("name")
+	if !isValidDomain(domainName) {
+		return echo.NewHTTPError(http.StatusBadRequest, "Invalid domain name")
+	}
+
+	registrar := c.FormValue("registrar")
+	if registrar == "" {
+		registrar = "Unknown"
+	}
+
+	expiryDateStr := c.FormValue("expiry_date")
+	expiryDate, err := time.Parse("2006-01-02", expiryDateStr)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "Invalid expiry date format")
+	}
+
+	whoisRaw := c.FormValue("whois_raw")
+
+	domain := &models.Domain{
+		UserID:       user.ID,
+		Name:         domainName,
+		Registrar:    &registrar,
+		ExpiryDate:   expiryDate,
+		ManualExpiry: true, // User provided this date manually
+		WHOISRaw:     &whoisRaw,
+		Status:       "active",
+	}
+
+	_, err = database.CreateDomain(c.Request().Context(), domain)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to create domain")
+	}
+
+	return c.Redirect(http.StatusSeeOther, "/domains?message="+url.QueryEscape("Domain added successfully"))
 }
 
 func (h *DomainHandler) ShowEditDomain(c echo.Context) error {
@@ -189,6 +238,7 @@ func (h *DomainHandler) UpdateDomain(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid expiry date format")
 	}
 	domain.ExpiryDate = expiryDate
+	domain.ManualExpiry = true // User manually edited the expiry date
 	domain.Status = c.FormValue("status")
 	notes := c.FormValue("notes")
 	domain.Notes = &notes
@@ -261,13 +311,18 @@ func (h *DomainHandler) CheckDomain(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "WHOIS lookup failed: "+err.Error())
 	}
 
-	if !result.ExpiryDate.IsZero() {
+	message := "WHOIS check completed"
+
+	// Only update expiry if NOT manually set
+	if !domain.ManualExpiry && !result.ExpiryDate.IsZero() {
 		if err := database.UpdateDomainWHOIS(c.Request().Context(), domainID, result.ExpiryDate, result.Registrar, result.WHOISRaw); err != nil {
 			return echo.NewHTTPError(http.StatusInternalServerError, "failed to update domain")
 		}
+	} else if domain.ManualExpiry {
+		message = "WHOIS check completed (expiry date kept, manually set)"
 	}
 
-	return c.Redirect(http.StatusSeeOther, "/domains?message="+url.QueryEscape("WHOIS check completed"))
+	return c.Redirect(http.StatusSeeOther, "/domains?message="+url.QueryEscape(message))
 }
 
 func isValidDomain(name string) bool {

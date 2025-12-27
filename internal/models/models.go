@@ -18,17 +18,18 @@ type User struct {
 }
 
 type Domain struct {
-	ID          int        `json:"id"`
-	UserID      int        `json:"user_id"`
-	Name        string     `json:"name"`
-	Registrar   *string    `json:"registrar,omitempty"`
-	ExpiryDate  time.Time  `json:"expiry_date"`
-	WHOISRaw    *string    `json:"whois_raw,omitempty"`
-	LastChecked *time.Time `json:"last_checked,omitempty"`
-	Status      string     `json:"status"`
-	Notes       *string    `json:"notes,omitempty"`
-	CreatedAt   time.Time  `json:"created_at"`
-	UpdatedAt   time.Time  `json:"updated_at"`
+	ID           int        `json:"id"`
+	UserID       int        `json:"user_id"`
+	Name         string     `json:"name"`
+	Registrar    *string    `json:"registrar,omitempty"`
+	ExpiryDate   time.Time  `json:"expiry_date"`
+	ManualExpiry bool       `json:"manual_expiry"`
+	WHOISRaw     *string    `json:"whois_raw,omitempty"`
+	LastChecked  *time.Time `json:"last_checked,omitempty"`
+	Status       string     `json:"status"`
+	Notes        *string    `json:"notes,omitempty"`
+	CreatedAt    time.Time  `json:"created_at"`
+	UpdatedAt    time.Time  `json:"updated_at"`
 }
 
 type NotificationLog struct {

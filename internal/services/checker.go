@@ -118,13 +118,16 @@ func (c *Checker) CheckAllDomains() {
 			log.Printf("WHOIS lookup failed for %s: %v", domain.Name, err)
 			errors++
 		} else {
-			if !result.ExpiryDate.IsZero() && !result.ExpiryDate.Equal(domain.ExpiryDate) {
+			// Only update expiry if NOT manually set and WHOIS returned a valid date
+			if !domain.ManualExpiry && !result.ExpiryDate.IsZero() && !result.ExpiryDate.Equal(domain.ExpiryDate) {
 				if err := database.UpdateDomainWHOIS(ctx, domain.ID, result.ExpiryDate, result.Registrar, result.WHOISRaw); err != nil {
 					log.Printf("Failed to update domain %s: %v", domain.Name, err)
 					errors++
 				} else {
 					log.Printf("Updated %s expiry date to %s", domain.Name, result.ExpiryDate.Format("2006-01-02"))
 				}
+			} else if domain.ManualExpiry {
+				log.Printf("Skipping expiry update for %s (manual expiry set)", domain.Name)
 			}
 			checked++
 		}

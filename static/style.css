@@ -247,6 +247,81 @@ tr:hover td {
     background-color: #f8fafc;
 }
 
+/* Domain Table Specific Styles */
+.domain-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.domain-table th,
+.domain-table td {
+    padding: 1rem 1rem;
+    text-align: left;
+}
+
+/* Keep these columns compact and non-wrapping */
+.domain-table th:nth-child(3),
+.domain-table td:nth-child(3),
+/* Expiry Date */
+.domain-table th:nth-child(4),
+.domain-table td:nth-child(4),
+/* Status */
+.domain-table th:nth-child(5),
+.domain-table td:nth-child(5),
+/* Days Left */
+.domain-table th:nth-child(6),
+.domain-table td:nth-child(6)
+
+/* Actions */
+    {
+    width: 1%;
+    white-space: nowrap;
+}
+
+/* Allow Domain and Registrar to share the available space */
+.domain-table td:nth-child(1) {
+    max-width: 250px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.domain-table td:nth-child(2) {
+    max-width: 300px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--text-muted);
+    font-size: 0.8125rem;
+}
+
+/* Expiry date with icon */
+.expiry-cell {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+}
+
+/* Action buttons styling */
+.action-buttons {
+    display: flex;
+    gap: 0.375rem;
+    align-items: center;
+}
+
+.btn-small {
+    padding: 0.375rem 0.625rem;
+    font-size: 0.75rem;
+    letter-spacing: 0.025em;
+    text-transform: none;
+    border-radius: 0.25rem;
+}
+
+/* Progress bar container tweak */
+.progress-container {
+    min-width: 100px;
+}
+
 /* Status Badges */
 .status-badge {
     display: inline-flex;

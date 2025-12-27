@@ -19,7 +19,19 @@
                 <a href="/domains/{{ .Domain.ID }}">{{ .Domain.Name }}</a>
             </td>
             <td>{{ nullString .Domain.Registrar }}</td>
-            <td>{{ formatDate .Domain.ExpiryDate }}</td>
+            <td>
+                <span class="expiry-cell">
+                    {{ formatDate .Domain.ExpiryDate }}
+                    {{ if .Domain.ManualExpiry }}
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                        title="Manually set expiry date" style="color: #6b7280; flex-shrink: 0;">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
+                    {{ end }}
+                </span>
+            </td>
             <td>
                 <span class="status-badge status-{{ .Domain.Status }}">{{ .Domain.Status }}</span>
             </td>

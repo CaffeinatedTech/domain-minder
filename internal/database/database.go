@@ -99,13 +99,37 @@ func migrate() error {
             updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
         );`,
 		`CREATE INDEX IF NOT EXISTS idx_email_queue_status ON email_queue(status);`,
+		// Migration: Add manual_expiry column for domains where expiry was manually entered
+		`ALTER TABLE domains ADD COLUMN manual_expiry BOOLEAN DEFAULT 0;`,
 	}
 
 	for _, query := range queries {
 		if _, err := DB.Exec(query); err != nil {
-			return err
+			// Ignore "duplicate column name" errors for ALTER TABLE migrations
+			if !isColumnExistsError(err) {
+				return err
+			}
 		}
 	}
 
 	return nil
+}
+
+// isColumnExistsError checks if the error is due to a duplicate column (SQLite)
+func isColumnExistsError(err error) bool {
+	return err != nil && (contains(err.Error(), "duplicate column name") ||
+		contains(err.Error(), "already exists"))
+}
+
+func contains(s, substr string) bool {
+	return len(s) >= len(substr) && (s == substr || len(s) > 0 && containsHelper(s, substr))
+}
+
+func containsHelper(s, substr string) bool {
+	for i := 0; i <= len(s)-len(substr); i++ {
+		if s[i:i+len(substr)] == substr {
+			return true
+		}
+	}
+	return false
 }
