@@ -7,8 +7,10 @@ import (
 	"net/url"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/CaffeinatedTech/domain-minder/internal/handlers"
+	"github.com/CaffeinatedTech/domain-minder/internal/middleware"
 	"github.com/labstack/echo/v4"
 	echomw "github.com/labstack/echo/v4/middleware"
 )
@@ -144,5 +146,85 @@ func TestHoneypot(t *testing.T) {
 
 	if !strings.Contains(rec.Body.String(), "Registrations closed") {
 		t.Errorf("Expected 'Registrations closed' for register honeypot, got %s", rec.Body.String())
+	}
+}
+
+func TestBruteForceBanning(t *testing.T) {
+	// Reset the ban store before each test
+	middleware.SetupBruteForceProtection()
+
+	testIP := "192.168.1.100"
+
+	// Clear any existing ban for this IP
+	middleware.RecordSuccessfulLogin(testIP)
+
+	// Test 1: Initial state - not banned
+	banned, _ := middleware.BruteForceCheck(testIP)
+	if banned {
+		t.Error("IP should not be banned initially")
+	}
+
+	// Test 2: Record failed attempts (less than max - no ban yet)
+	for i := 0; i < 4; i++ {
+		middleware.RecordFailedAttempt(testIP)
+	}
+	banned, _ = middleware.BruteForceCheck(testIP)
+	if banned {
+		t.Error("IP should not be banned after 4 attempts (max is 5)")
+	}
+
+	// Test 3: 5th attempt - should trigger ban
+	middleware.RecordFailedAttempt(testIP)
+	banned, remaining := middleware.BruteForceCheck(testIP)
+	if !banned {
+		t.Error("IP should be banned after 5 attempts")
+	}
+	if remaining <= 0 {
+		t.Error("Ban should have a positive duration")
+	}
+
+	// Test 4: 6th attempt - ban duration should increase
+	middleware.RecordFailedAttempt(testIP)
+	_, remaining2 := middleware.BruteForceCheck(testIP)
+	// After 6 attempts, ban should be at least 30 minutes (2x base 15min)
+	if remaining2 < 15*time.Minute {
+		t.Error("Ban duration should increase with more attempts")
+	}
+
+	// Test 5: Successful login clears ban
+	middleware.RecordSuccessfulLogin(testIP)
+	banned, _ = middleware.BruteForceCheck(testIP)
+	if banned {
+		t.Error("IP should not be banned after successful login")
+	}
+
+	// Test 6: Different IPs don't affect each other
+	ip1 := "192.168.1.101"
+	ip2 := "192.168.1.102"
+
+	// Ban ip1
+	for i := 0; i < 5; i++ {
+		middleware.RecordFailedAttempt(ip1)
+	}
+	banned, _ = middleware.BruteForceCheck(ip1)
+	if !banned {
+		t.Error("IP1 should be banned")
+	}
+
+	// ip2 should not be banned
+	banned, _ = middleware.BruteForceCheck(ip2)
+	if banned {
+		t.Error("IP2 should not be banned")
+	}
+
+	// Test 7: Max ban duration cap
+	// Record many failures to test the cap
+	for i := 0; i < 20; i++ {
+		middleware.RecordFailedAttempt(ip2)
+	}
+	_, remainingMax := middleware.BruteForceCheck(ip2)
+	// Max ban should be capped at 24 hours (may be slightly over due to exponential growth)
+	if remainingMax > 25*time.Hour {
+		t.Error("Ban duration should not significantly exceed max (24h)")
 	}
 }

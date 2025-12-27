@@ -16,15 +16,15 @@
             <div class="card-header">
                 <h3>Login to Domain Minder</h3>
             </div>
-            <div class="card-body">
-                {{ if .Error }}
-                <div class="alert alert-error" style="margin-bottom: 1rem;">
-                    {{ .Error }}
-                </div>
-                {{ end }}
-                <form method="POST" action="/login">
+            <div class="card-body" id="login-container">
+                <form id="login-form" hx-post="/login" hx-target="#login-container" hx-swap="outerHTML">
                     <input type="hidden" name="csrf" value="{{.csrf}}">
                     <input type="text" name="website_url" class="website-url-field" tabindex="-1" autocomplete="off">
+                    {{ if .Error }}
+                    <div class="alert alert-error" style="margin-bottom: 1rem;">
+                        {{ .Error }}
+                    </div>
+                    {{ end }}
                     <div class="form-group">
                         <label>Email</label>
                         <input type="email" name="email" required>

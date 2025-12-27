@@ -25,8 +25,13 @@ func NewAuthHandler(cfg *config.Config, m *mailer.Service) *AuthHandler {
 }
 
 func (h *AuthHandler) Register(c echo.Context) error {
+	isHTMX := c.Request().Header.Get("HX-Request") == "true"
+
 	// Honeypot check
 	if c.FormValue("website_url") != "" {
+		if isHTMX {
+			return c.HTML(http.StatusBadRequest, `<div class="alert alert-error" style="margin-bottom: 1rem;">Registrations closed</div>`)
+		}
 		return c.Render(http.StatusBadRequest, "register", map[string]interface{}{"Error": "Registrations closed"})
 	}
 	email := c.FormValue("email")
@@ -84,13 +89,17 @@ func (h *AuthHandler) Register(c echo.Context) error {
 	verificationURL := h.buildVerificationURL(c, token)
 
 	if err := h.mailer.EnqueueVerificationEmail(c.Request().Context(), email, verificationURL); err != nil {
-		// Log error but don't fail registration
 		println("Failed to enqueue verification email:", err.Error())
 	}
 
 	sess, _ := session.Get("session", c)
 	sess.Values = map[interface{}]interface{}{"user_id": user.ID}
 	sess.Save(c.Request(), c.Response())
+
+	if isHTMX {
+		c.Response().Header().Set("HX-Redirect", "/dashboard")
+		return c.NoContent(http.StatusOK)
+	}
 
 	return c.Redirect(http.StatusSeeOther, "/dashboard")
 }
@@ -104,9 +113,15 @@ func (h *AuthHandler) ShowLogin(c echo.Context) error {
 }
 
 func (h *AuthHandler) Login(c echo.Context) error {
+	ip := c.RealIP()
+	isHTMX := c.Request().Header.Get("HX-Request") == "true"
+
 	// Honeypot check
 	if c.FormValue("website_url") != "" {
-		// Silent failure - return generic invalid credentials message to not alert the attacker
+		middleware.RecordFailedAttempt(ip)
+		if isHTMX {
+			return c.HTML(http.StatusUnauthorized, `<div class="alert alert-error" style="margin-bottom: 1rem;">Invalid email or password</div>`)
+		}
 		return c.Render(http.StatusUnauthorized, "login", map[string]interface{}{"Error": "Invalid email or password"})
 	}
 	email := c.FormValue("email")
@@ -121,16 +136,31 @@ func (h *AuthHandler) Login(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "database error")
 	}
 	if user == nil {
+		middleware.RecordFailedAttempt(ip)
+		if isHTMX {
+			return c.HTML(http.StatusUnauthorized, `<div class="alert alert-error" style="margin-bottom: 1rem;">Invalid email or password</div>`)
+		}
 		return c.Render(http.StatusUnauthorized, "login", map[string]interface{}{"Error": "Invalid email or password"})
 	}
 
 	if !auth.CheckPassword(password, user.PasswordHash) {
+		middleware.RecordFailedAttempt(ip)
+		if isHTMX {
+			return c.HTML(http.StatusUnauthorized, `<div class="alert alert-error" style="margin-bottom: 1rem;">Invalid email or password</div>`)
+		}
 		return c.Render(http.StatusUnauthorized, "login", map[string]interface{}{"Error": "Invalid email or password"})
 	}
+
+	middleware.RecordSuccessfulLogin(ip)
 
 	sess, _ := session.Get("session", c)
 	sess.Values = map[interface{}]interface{}{"user_id": user.ID}
 	sess.Save(c.Request(), c.Response())
+
+	if isHTMX {
+		c.Response().Header().Set("HX-Redirect", "/dashboard")
+		return c.NoContent(http.StatusOK)
+	}
 
 	return c.Redirect(http.StatusSeeOther, "/dashboard")
 }

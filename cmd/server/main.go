@@ -59,6 +59,7 @@ func main() {
 	}))
 
 	middleware.SetupSessionMiddleware(e, cfg.SessionSecret)
+	middleware.SetupBruteForceProtection()
 
 	e.Renderer = templates.NewRenderer("internal/templates")
 	e.Static("/static", "static")
@@ -86,7 +87,7 @@ func main() {
 	e.GET("/register", authHandler.ShowRegister)
 	e.POST("/register", authHandler.Register, echomw.RateLimiter(echomw.NewRateLimiterMemoryStore(2)))
 	e.GET("/login", authHandler.ShowLogin)
-	e.POST("/login", authHandler.Login, echomw.RateLimiter(echomw.NewRateLimiterMemoryStore(2)))
+	e.POST("/login", authHandler.Login, echomw.RateLimiter(echomw.NewRateLimiterMemoryStore(2)), middleware.BruteForceMiddleware())
 	e.GET("/verify", authHandler.VerifyEmail)
 
 	protected := e.Group("")
