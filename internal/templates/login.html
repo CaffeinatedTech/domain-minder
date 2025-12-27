@@ -6,8 +6,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Domain Minder</title>
+    <meta name="htmx-config"
+        content='{"responseHandling":[{"code":"204","swap":false},{"code":"[23]..","swap":true},{"code":"400","swap":true},{"code":"401","swap":true},{"code":"[45]..","swap":false,"error":true},{"code":"...","swap":true}]}'>
     <script src="https://unpkg.com/htmx.org@2.0.7"></script>
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
     <link rel="stylesheet" href="/static/style.css">
+    <script>
+        document.addEventListener('htmx:afterSwap', function (event) {
+            if (window.turnstile) {
+                const turnstileElements = event.detail.target.querySelectorAll('.cf-turnstile');
+                turnstileElements.forEach(el => {
+                    if (el.innerHTML === '') {
+                        turnstile.render(el);
+                    }
+                });
+            }
+        });
+    </script>
 </head>
 
 <body>
@@ -17,23 +32,35 @@
                 <h3>Login to Domain Minder</h3>
             </div>
             <div class="card-body" id="login-container">
-                <form id="login-form" hx-post="/login" hx-target="#login-container" hx-swap="outerHTML">
-                    <input type="hidden" name="csrf" value="{{.csrf}}">
-                    <input type="text" name="website_url" class="website-url-field" tabindex="-1" autocomplete="off">
-                    {{ if .Error }}
-                    <div class="alert alert-error" style="margin-bottom: 1rem;">
-                        {{ .Error }}
+                <form id="login-form" hx-post="/login" hx-target="#login-form-content" hx-swap="innerHTML">
+                    <div id="login-form-content">
+                        {{ block "login_form" . }}
+                        <input type="hidden" name="csrf" value="{{.csrf}}">
+                        <input type="text" name="website_url" class="website-url-field" tabindex="-1"
+                            autocomplete="off">
+                        {{ if .Error }}
+                        <div id="login-error" class="alert alert-error" style="margin-bottom: 1rem;">
+                            {{ .Error }}
+                        </div>
+                        {{ else }}
+                        <div id="login-error"></div>
+                        {{ end }}
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" name="email" value="{{.Email}}" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Password</label>
+                            <input type="password" name="password" required>
+                        </div>
+                        {{ if .turnstileEnabled }}
+                        <div class="form-group">
+                            <div class="cf-turnstile" data-sitekey="{{.turnstileSiteKey}}" data-theme="auto"></div>
+                        </div>
+                        {{ end }}
+                        <button type="submit" class="btn btn-primary w-full">Login</button>
+                        {{ end }}
                     </div>
-                    {{ end }}
-                    <div class="form-group">
-                        <label>Email</label>
-                        <input type="email" name="email" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Password</label>
-                        <input type="password" name="password" required>
-                    </div>
-                    <button type="submit" class="btn btn-primary w-full">Login</button>
                 </form>
                 <div class="text-center mt-4">
                     <p style="font-size: 0.875rem; color: var(--text-muted);">

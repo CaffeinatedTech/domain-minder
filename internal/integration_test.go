@@ -17,6 +17,7 @@ import (
 	"github.com/CaffeinatedTech/domain-minder/internal/models"
 	"github.com/CaffeinatedTech/domain-minder/internal/services"
 	"github.com/CaffeinatedTech/domain-minder/internal/services/mailer"
+	"github.com/CaffeinatedTech/domain-minder/internal/services/turnstile"
 	"github.com/CaffeinatedTech/domain-minder/internal/templates"
 	"github.com/labstack/echo/v4"
 )
@@ -29,6 +30,10 @@ func setupTestEnvironment(t *testing.T) *echo.Echo {
 		Port:          18080,
 		SessionSecret: "test-secret-integration",
 		CheckInterval: 1 * time.Hour,
+		TurnstileConfig: config.TurnstileConfig{
+			SiteKey:   "",
+			SecretKey: "",
+		},
 	}
 
 	if err := database.Init(cfg); err != nil {
@@ -43,7 +48,8 @@ func setupTestEnvironment(t *testing.T) *echo.Echo {
 	domainHandler := handlers.NewDomainHandler(whoisService)
 
 	mailerService := mailer.NewService(cfg)
-	authHandler := handlers.NewAuthHandler(cfg, mailerService)
+	turnstileService := turnstile.NewService(&cfg.TurnstileConfig)
+	authHandler := handlers.NewAuthHandler(cfg, mailerService, turnstileService)
 
 	e.GET("/register", authHandler.ShowRegister)
 	e.POST("/register", authHandler.Register)

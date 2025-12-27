@@ -9,8 +9,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/CaffeinatedTech/domain-minder/internal/config"
 	"github.com/CaffeinatedTech/domain-minder/internal/handlers"
 	"github.com/CaffeinatedTech/domain-minder/internal/middleware"
+	"github.com/CaffeinatedTech/domain-minder/internal/services/turnstile"
 	"github.com/labstack/echo/v4"
 	echomw "github.com/labstack/echo/v4/middleware"
 )
@@ -24,6 +26,13 @@ func (t *MockRenderer) Render(w io.Writer, name string, data interface{}, c echo
 		}
 	}
 	return nil
+}
+
+func getDisabledTurnstileService() *turnstile.Service {
+	return turnstile.NewService(&config.TurnstileConfig{
+		SiteKey:   "",
+		SecretKey: "",
+	})
 }
 
 func TestCSRFProtection(t *testing.T) {
@@ -81,7 +90,7 @@ func TestRateLimiting(t *testing.T) {
 
 func TestHoneypot(t *testing.T) {
 	// Create handler with nil dependencies (safe for early check)
-	h := handlers.NewAuthHandler(nil, nil)
+	h := handlers.NewAuthHandler(nil, nil, getDisabledTurnstileService())
 	e := echo.New()
 	e.Renderer = &MockRenderer{}
 
@@ -117,10 +126,9 @@ func TestHoneypot(t *testing.T) {
 	rec = httptest.NewRecorder()
 	c = e.NewContext(req, rec)
 
-	// Recover from panic as dependencies are nil
+	// Recover from panic as panic is expected due to nil DB/Config, but it means it PASSED the honeypot check
 	defer func() {
 		if r := recover(); r != nil {
-			// Panic is expected due to nil DB/Config, but it means it PASSED the honeypot check
 		}
 	}()
 

@@ -15,6 +15,7 @@ import (
 	"github.com/CaffeinatedTech/domain-minder/internal/services"
 	"github.com/CaffeinatedTech/domain-minder/internal/services/mailer"
 	"github.com/CaffeinatedTech/domain-minder/internal/services/notifications"
+	"github.com/CaffeinatedTech/domain-minder/internal/services/turnstile"
 	"github.com/CaffeinatedTech/domain-minder/internal/templates"
 	"github.com/labstack/echo/v4"
 	echomw "github.com/labstack/echo/v4/middleware"
@@ -39,6 +40,7 @@ func main() {
 	whoisService := services.NewWHOISService()
 	mailerService := mailer.NewService(cfg)
 	mailerService.StartWorker()
+	turnstileService := turnstile.NewService(&cfg.TurnstileConfig)
 
 	notificationMgr := notifications.NewNotificationManager(cfg, mailerService)
 	checker := services.NewChecker(cfg, notificationMgr, whoisService)
@@ -76,7 +78,7 @@ func main() {
 		return c.Redirect(http.StatusSeeOther, "/login")
 	})
 
-	authHandler := handlers.NewAuthHandler(cfg, mailerService)
+	authHandler := handlers.NewAuthHandler(cfg, mailerService, turnstileService)
 	settingsHandler := handlers.NewSettingsHandler()
 
 	domainHandler := handlers.NewDomainHandler(whoisService)

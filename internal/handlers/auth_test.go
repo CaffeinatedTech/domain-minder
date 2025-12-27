@@ -9,6 +9,7 @@ import (
 
 	"github.com/CaffeinatedTech/domain-minder/internal/config"
 	"github.com/CaffeinatedTech/domain-minder/internal/services/mailer"
+	"github.com/CaffeinatedTech/domain-minder/internal/services/turnstile"
 	"github.com/CaffeinatedTech/domain-minder/internal/templates"
 	"github.com/labstack/echo/v4"
 )
@@ -22,6 +23,10 @@ func setupTestHandler(t *testing.T) (*echo.Echo, *config.Config) {
 		Port:          9000,
 		SessionSecret: "test-secret",
 		CheckInterval: 6 * time.Hour,
+		TurnstileConfig: config.TurnstileConfig{
+			SiteKey:   "",
+			SecretKey: "",
+		},
 	}
 
 	return e, cfg
@@ -34,7 +39,8 @@ func TestShowRegister(t *testing.T) {
 	c := e.NewContext(req, rec)
 
 	m := mailer.NewService(cfg)
-	h := NewAuthHandler(cfg, m)
+	ts := turnstile.NewService(&cfg.TurnstileConfig)
+	h := NewAuthHandler(cfg, m, ts)
 	if err := h.ShowRegister(c); err != nil {
 		t.Fatalf("ShowRegister() error = %v", err)
 	}
@@ -56,7 +62,8 @@ func TestShowLogin(t *testing.T) {
 	c := e.NewContext(req, rec)
 
 	m := mailer.NewService(cfg)
-	h := NewAuthHandler(cfg, m)
+	ts := turnstile.NewService(&cfg.TurnstileConfig)
+	h := NewAuthHandler(cfg, m, ts)
 	if err := h.ShowLogin(c); err != nil {
 		t.Fatalf("ShowLogin() error = %v", err)
 	}
@@ -120,7 +127,8 @@ func TestRegisterValidation(t *testing.T) {
 			c := e.NewContext(req, rec)
 
 			m := mailer.NewService(cfg)
-			h := NewAuthHandler(cfg, m)
+			ts := turnstile.NewService(&cfg.TurnstileConfig)
+			h := NewAuthHandler(cfg, m, ts)
 			h.Register(c)
 
 			if rec.Code != tt.wantStatus {
@@ -162,7 +170,8 @@ func TestLoginValidation(t *testing.T) {
 			c := e.NewContext(req, rec)
 
 			m := mailer.NewService(cfg)
-			h := NewAuthHandler(cfg, m)
+			ts := turnstile.NewService(&cfg.TurnstileConfig)
+			h := NewAuthHandler(cfg, m, ts)
 			h.Login(c)
 
 			if rec.Code != tt.wantStatus {

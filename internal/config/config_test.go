@@ -75,17 +75,17 @@ func TestCheckIntervalString(t *testing.T) {
 		{
 			name:     "zero interval",
 			interval: 0,
-			expected: "0 */6 * * *",
+			expected: "0 0 */6 * * *",
 		},
 		{
 			name:     "6 hour interval",
 			interval: 6 * 3600 * 1000000000,
-			expected: "0 */6 * * *",
+			expected: "0 0 */6 * * *",
 		},
 		{
 			name:     "24 hour interval",
 			interval: 24 * 3600 * 1000000000,
-			expected: "0 */24 * * *",
+			expected: "0 0 */24 * * *",
 		},
 	}
 

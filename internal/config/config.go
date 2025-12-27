@@ -10,12 +10,13 @@ import (
 )
 
 type Config struct {
-	DBPath         string
-	Port           int
-	SessionSecret  string
-	SMTPConfig     SMTPConfig
-	TelegramConfig TelegramConfig
-	CheckInterval  time.Duration
+	DBPath          string
+	Port            int
+	SessionSecret   string
+	SMTPConfig      SMTPConfig
+	TelegramConfig  TelegramConfig
+	TurnstileConfig TurnstileConfig
+	CheckInterval   time.Duration
 }
 
 type SMTPConfig struct {
@@ -28,6 +29,11 @@ type SMTPConfig struct {
 
 type TelegramConfig struct {
 	BotToken string
+}
+
+type TurnstileConfig struct {
+	SiteKey   string
+	SecretKey string
 }
 
 func (c *Config) ServerAddr() string {
@@ -59,6 +65,10 @@ func Load() (*Config, error) {
 		},
 		TelegramConfig: TelegramConfig{
 			BotToken: getEnv("TELEGRAM_BOT_TOKEN", ""),
+		},
+		TurnstileConfig: TurnstileConfig{
+			SiteKey:   getEnv("TURNSTILE_SITE_KEY", ""),
+			SecretKey: getEnv("TURNSTILE_SECRET_KEY", ""),
 		},
 	}
 

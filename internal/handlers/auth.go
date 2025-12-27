@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"log"
 	"net/http"
 	"net/url"
 	"time"
@@ -11,17 +12,19 @@ import (
 	"github.com/CaffeinatedTech/domain-minder/internal/middleware"
 	"github.com/CaffeinatedTech/domain-minder/internal/models"
 	"github.com/CaffeinatedTech/domain-minder/internal/services/mailer"
+	"github.com/CaffeinatedTech/domain-minder/internal/services/turnstile"
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
 )
 
 type AuthHandler struct {
-	config *config.Config
-	mailer *mailer.Service
+	config    *config.Config
+	mailer    *mailer.Service
+	turnstile *turnstile.Service
 }
 
-func NewAuthHandler(cfg *config.Config, m *mailer.Service) *AuthHandler {
-	return &AuthHandler{config: cfg, mailer: m}
+func NewAuthHandler(cfg *config.Config, m *mailer.Service, ts *turnstile.Service) *AuthHandler {
+	return &AuthHandler{config: cfg, mailer: m, turnstile: ts}
 }
 
 func (h *AuthHandler) Register(c echo.Context) error {
@@ -30,24 +33,90 @@ func (h *AuthHandler) Register(c echo.Context) error {
 	// Honeypot check
 	if c.FormValue("website_url") != "" {
 		if isHTMX {
-			return c.HTML(http.StatusBadRequest, `<div class="alert alert-error" style="margin-bottom: 1rem;">Registrations closed</div>`)
+			data := map[string]interface{}{
+				"csrf":             c.Get("csrf"),
+				"Error":            "Registrations closed",
+				"Email":            c.FormValue("email"),
+				"turnstileEnabled": h.turnstile.IsEnabled(),
+				"turnstileSiteKey": h.turnstile.SiteKey(),
+			}
+			return c.Render(http.StatusBadRequest, "register_form", data)
 		}
-		return c.Render(http.StatusBadRequest, "register", map[string]interface{}{"Error": "Registrations closed"})
+		return c.Render(http.StatusBadRequest, "register", map[string]interface{}{"Error": "Registrations closed", "Email": c.FormValue("email")})
 	}
+
+	// Turnstile validation
+	if h.turnstile.IsEnabled() {
+		token := c.FormValue("cf-turnstile-response")
+		ip := c.RealIP()
+		result, err := h.turnstile.ValidateToken(token, ip)
+		if err != nil || !result.Success {
+			var errorCodes []string
+			if result != nil {
+				errorCodes = result.ErrorCodes
+			}
+			log.Printf("Turnstile validation failed: success=%v, err=%v, error-codes=%v, token-len=%d, ip=%s",
+				result != nil && result.Success, err, errorCodes, len(token), ip)
+			if isHTMX {
+				data := map[string]interface{}{
+					"csrf":             c.Get("csrf"),
+					"Error":            "Please complete the captcha challenge to verify you're human.",
+					"Email":            c.FormValue("email"),
+					"turnstileEnabled": h.turnstile.IsEnabled(),
+					"turnstileSiteKey": h.turnstile.SiteKey(),
+				}
+				c.Response().Header().Set("HX-Retarget", "#register-form-content")
+				c.Response().Header().Set("HX-Reswap", "innerHTML")
+				return c.Render(http.StatusBadRequest, "register_form", data)
+			}
+			return c.Render(http.StatusBadRequest, "register", map[string]interface{}{"Error": "Verification failed. Please try again.", "Email": c.FormValue("email"), "turnstileEnabled": true, "turnstileSiteKey": h.turnstile.SiteKey()})
+		}
+	}
+
 	email := c.FormValue("email")
 	password := c.FormValue("password")
 	confirmPassword := c.FormValue("confirm_password")
 
 	if email == "" || password == "" {
-		return c.Render(http.StatusBadRequest, "register", map[string]interface{}{"Error": "Email and password are required"})
+		if isHTMX {
+			data := map[string]interface{}{
+				"csrf":             c.Get("csrf"),
+				"Error":            "Email and password are required",
+				"Email":            c.FormValue("email"),
+				"turnstileEnabled": h.turnstile.IsEnabled(),
+				"turnstileSiteKey": h.turnstile.SiteKey(),
+			}
+			return c.Render(http.StatusBadRequest, "register_form", data)
+		}
+		return c.Render(http.StatusBadRequest, "register", map[string]interface{}{"Error": "Email and password are required", "Email": c.FormValue("email")})
 	}
 
 	if password != confirmPassword {
-		return c.Render(http.StatusBadRequest, "register", map[string]interface{}{"Error": "Passwords do not match"})
+		if isHTMX {
+			data := map[string]interface{}{
+				"csrf":             c.Get("csrf"),
+				"Error":            "Passwords do not match",
+				"Email":            c.FormValue("email"),
+				"turnstileEnabled": h.turnstile.IsEnabled(),
+				"turnstileSiteKey": h.turnstile.SiteKey(),
+			}
+			return c.Render(http.StatusBadRequest, "register_form", data)
+		}
+		return c.Render(http.StatusBadRequest, "register", map[string]interface{}{"Error": "Passwords do not match", "Email": c.FormValue("email")})
 	}
 
 	if len(password) < 8 {
-		return c.Render(http.StatusBadRequest, "register", map[string]interface{}{"Error": "Password must be at least 8 characters"})
+		if isHTMX {
+			data := map[string]interface{}{
+				"csrf":             c.Get("csrf"),
+				"Error":            "Password must be at least 8 characters",
+				"Email":            c.FormValue("email"),
+				"turnstileEnabled": h.turnstile.IsEnabled(),
+				"turnstileSiteKey": h.turnstile.SiteKey(),
+			}
+			return c.Render(http.StatusBadRequest, "register_form", data)
+		}
+		return c.Render(http.StatusBadRequest, "register", map[string]interface{}{"Error": "Password must be at least 8 characters", "Email": c.FormValue("email")})
 	}
 
 	existing, err := database.GetUserByEmail(c.Request().Context(), email)
@@ -55,7 +124,17 @@ func (h *AuthHandler) Register(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "database error")
 	}
 	if existing != nil {
-		return c.Render(http.StatusBadRequest, "register", map[string]interface{}{"Error": "Email already registered"})
+		if isHTMX {
+			data := map[string]interface{}{
+				"csrf":             c.Get("csrf"),
+				"Error":            "Email already registered",
+				"Email":            c.FormValue("email"),
+				"turnstileEnabled": h.turnstile.IsEnabled(),
+				"turnstileSiteKey": h.turnstile.SiteKey(),
+			}
+			return c.Render(http.StatusBadRequest, "register_form", data)
+		}
+		return c.Render(http.StatusBadRequest, "register", map[string]interface{}{"Error": "Email already registered", "Email": c.FormValue("email")})
 	}
 
 	hash, err := auth.HashPassword(password)
@@ -105,11 +184,23 @@ func (h *AuthHandler) Register(c echo.Context) error {
 }
 
 func (h *AuthHandler) ShowRegister(c echo.Context) error {
-	return c.Render(http.StatusOK, "register", nil)
+	data := map[string]interface{}{
+		"turnstileEnabled": h.turnstile.IsEnabled(),
+	}
+	if h.turnstile.IsEnabled() {
+		data["turnstileSiteKey"] = h.turnstile.SiteKey()
+	}
+	return c.Render(http.StatusOK, "register", data)
 }
 
 func (h *AuthHandler) ShowLogin(c echo.Context) error {
-	return c.Render(http.StatusOK, "login", nil)
+	data := map[string]interface{}{
+		"turnstileEnabled": h.turnstile.IsEnabled(),
+	}
+	if h.turnstile.IsEnabled() {
+		data["turnstileSiteKey"] = h.turnstile.SiteKey()
+	}
+	return c.Render(http.StatusOK, "login", data)
 }
 
 func (h *AuthHandler) Login(c echo.Context) error {
@@ -120,15 +211,66 @@ func (h *AuthHandler) Login(c echo.Context) error {
 	if c.FormValue("website_url") != "" {
 		middleware.RecordFailedAttempt(ip)
 		if isHTMX {
-			return c.HTML(http.StatusUnauthorized, `<div class="alert alert-error" style="margin-bottom: 1rem;">Invalid email or password</div>`)
+			data := map[string]interface{}{
+				"csrf":             c.Get("csrf"),
+				"Error":            "Invalid email or password",
+				"Email":            c.FormValue("email"),
+				"turnstileEnabled": h.turnstile.IsEnabled(),
+				"turnstileSiteKey": h.turnstile.SiteKey(),
+			}
+			c.Response().Header().Set("HX-Retarget", "#login-form-content")
+			c.Response().Header().Set("HX-Reswap", "innerHTML")
+			return c.Render(http.StatusUnauthorized, "login_form", data)
 		}
-		return c.Render(http.StatusUnauthorized, "login", map[string]interface{}{"Error": "Invalid email or password"})
+		return c.Render(http.StatusUnauthorized, "login", map[string]interface{}{"Error": "Invalid email or password", "Email": c.FormValue("email")})
 	}
+
+	// Turnstile validation
+	if h.turnstile.IsEnabled() {
+		token := c.FormValue("cf-turnstile-response")
+		ip := c.RealIP()
+		result, err := h.turnstile.ValidateToken(token, ip)
+		if err != nil || !result.Success {
+			var errorCodes []string
+			if result != nil {
+				errorCodes = result.ErrorCodes
+			}
+			log.Printf("Turnstile validation failed: success=%v, err=%v, error-codes=%v, token-len=%d, ip=%s",
+				result != nil && result.Success, err, errorCodes, len(token), ip)
+			middleware.RecordFailedAttempt(ip)
+			if isHTMX {
+				data := map[string]interface{}{
+					"csrf":             c.Get("csrf"),
+					"Error":            "Please complete the captcha challenge to verify you're human.",
+					"Email":            c.FormValue("email"),
+					"turnstileEnabled": h.turnstile.IsEnabled(),
+					"turnstileSiteKey": h.turnstile.SiteKey(),
+				}
+				c.Response().Header().Set("HX-Retarget", "#login-form-content")
+				c.Response().Header().Set("HX-Reswap", "innerHTML")
+				return c.Render(http.StatusUnauthorized, "login_form", data)
+			}
+			return c.Render(http.StatusUnauthorized, "login", map[string]interface{}{"Error": "Verification failed. Please try again.", "Email": c.FormValue("email"), "turnstileEnabled": true, "turnstileSiteKey": h.turnstile.SiteKey()})
+		}
+	}
+
 	email := c.FormValue("email")
 	password := c.FormValue("password")
 
 	if email == "" || password == "" {
-		return c.Render(http.StatusBadRequest, "login", map[string]interface{}{"Error": "Email and password are required"})
+		if isHTMX {
+			data := map[string]interface{}{
+				"csrf":             c.Get("csrf"),
+				"Error":            "Email and password are required",
+				"Email":            c.FormValue("email"),
+				"turnstileEnabled": h.turnstile.IsEnabled(),
+				"turnstileSiteKey": h.turnstile.SiteKey(),
+			}
+			c.Response().Header().Set("HX-Retarget", "#login-form-content")
+			c.Response().Header().Set("HX-Reswap", "innerHTML")
+			return c.Render(http.StatusBadRequest, "login_form", data)
+		}
+		return c.Render(http.StatusBadRequest, "login", map[string]interface{}{"Error": "Email and password are required", "Email": c.FormValue("email")})
 	}
 
 	user, err := database.GetUserByEmail(c.Request().Context(), email)
@@ -138,17 +280,35 @@ func (h *AuthHandler) Login(c echo.Context) error {
 	if user == nil {
 		middleware.RecordFailedAttempt(ip)
 		if isHTMX {
-			return c.HTML(http.StatusUnauthorized, `<div class="alert alert-error" style="margin-bottom: 1rem;">Invalid email or password</div>`)
+			data := map[string]interface{}{
+				"csrf":             c.Get("csrf"),
+				"Error":            "Invalid email or password",
+				"Email":            c.FormValue("email"),
+				"turnstileEnabled": h.turnstile.IsEnabled(),
+				"turnstileSiteKey": h.turnstile.SiteKey(),
+			}
+			c.Response().Header().Set("HX-Retarget", "#login-form-content")
+			c.Response().Header().Set("HX-Reswap", "innerHTML")
+			return c.Render(http.StatusUnauthorized, "login_form", data)
 		}
-		return c.Render(http.StatusUnauthorized, "login", map[string]interface{}{"Error": "Invalid email or password"})
+		return c.Render(http.StatusUnauthorized, "login", map[string]interface{}{"Error": "Invalid email or password", "Email": c.FormValue("email")})
 	}
 
 	if !auth.CheckPassword(password, user.PasswordHash) {
 		middleware.RecordFailedAttempt(ip)
 		if isHTMX {
-			return c.HTML(http.StatusUnauthorized, `<div class="alert alert-error" style="margin-bottom: 1rem;">Invalid email or password</div>`)
+			data := map[string]interface{}{
+				"csrf":             c.Get("csrf"),
+				"Error":            "Invalid email or password",
+				"Email":            c.FormValue("email"),
+				"turnstileEnabled": h.turnstile.IsEnabled(),
+				"turnstileSiteKey": h.turnstile.SiteKey(),
+			}
+			c.Response().Header().Set("HX-Retarget", "#login-form-content")
+			c.Response().Header().Set("HX-Reswap", "innerHTML")
+			return c.Render(http.StatusUnauthorized, "login_form", data)
 		}
-		return c.Render(http.StatusUnauthorized, "login", map[string]interface{}{"Error": "Invalid email or password"})
+		return c.Render(http.StatusUnauthorized, "login", map[string]interface{}{"Error": "Invalid email or password", "Email": c.FormValue("email")})
 	}
 
 	middleware.RecordSuccessfulLogin(ip)
