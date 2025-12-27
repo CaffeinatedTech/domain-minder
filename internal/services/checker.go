@@ -43,7 +43,7 @@ func (c *Checker) Start() error {
 
 	c.cron = cron.New(cron.WithSeconds())
 
-	_, err := c.cron.AddFunc(c.cfg.CheckInterval.String(), c.CheckAllDomains)
+	_, err := c.cron.AddFunc(c.cfg.CheckIntervalString(), c.CheckAllDomains)
 	if err != nil {
 		return err
 	}

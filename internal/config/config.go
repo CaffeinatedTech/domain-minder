@@ -36,10 +36,10 @@ func (c *Config) ServerAddr() string {
 
 func (c *Config) CheckIntervalString() string {
 	if c.CheckInterval == 0 {
-		return "0 */6 * * *"
+		return "0 0 */6 * * *"
 	}
 	hours := int(c.CheckInterval.Hours())
-	return fmt.Sprintf("0 */%d * * *", hours)
+	return fmt.Sprintf("0 0 */%d * * *", hours)
 }
 
 func Load() (*Config, error) {
