@@ -4,13 +4,14 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/CaffeinatedTech/domain-minder/internal/config"
 	"github.com/CaffeinatedTech/domain-minder/internal/database"
 	"github.com/CaffeinatedTech/domain-minder/internal/handlers"
 	"github.com/CaffeinatedTech/domain-minder/internal/middleware"
-	"github.com/CaffeinatedTech/domain-minder/internal/models"
 	"github.com/CaffeinatedTech/domain-minder/internal/services"
+	"github.com/CaffeinatedTech/domain-minder/internal/templates"
 	"github.com/labstack/echo/v4"
 	echomw "github.com/labstack/echo/v4/middleware"
 )
@@ -39,6 +40,9 @@ func main() {
 
 	middleware.SetupSessionMiddleware(e, cfg.SessionSecret)
 
+	e.Renderer = templates.NewRenderer("internal/templates")
+	e.Static("/static", "static")
+
 	e.GET("/health", func(c echo.Context) error {
 		return c.String(http.StatusOK, "OK")
 	})
@@ -64,44 +68,45 @@ func main() {
 	protected.POST("/settings/thresholds", settingsHandler.UpdateThresholds)
 
 	protected.GET("/domains", domainHandler.ListDomains)
+	protected.GET("/domains/list", domainHandler.ListDomainsPartial)
 	protected.GET("/domains/new", domainHandler.ShowAddDomain)
 	protected.POST("/domains", domainHandler.AddDomain)
 	protected.GET("/domains/:id", domainHandler.ShowEditDomain)
 	protected.POST("/domains/:id", domainHandler.UpdateDomain)
-	protected.POST("/domains/:id/delete", domainHandler.DeleteDomain)
+	protected.DELETE("/domains/:id/delete", domainHandler.DeleteDomain)
 	protected.POST("/domains/:id/check", domainHandler.CheckDomain)
 
 	protected.GET("/dashboard", func(c echo.Context) error {
 		user := middleware.GetCurrentUser(c)
-		return c.String(http.StatusOK, `
-        <html><body>
-        <h1>Dashboard</h1>
-        <p>Welcome, `+user.Email+`!</p>
-        `+buildEmailVerificationBanner(user)+`
-        <p><a href="/domains">Manage Domains</a></p>
-        <p><a href="/settings">Settings</a></p>
-        <form method="POST" action="/logout" style="display:inline;">
-            <button type="submit">Logout</button>
-        </form>
-        </body></html>
-        `)
+
+		domains, err := database.GetDomainsByUserID(c.Request().Context(), user.ID)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, "failed to get domains")
+		}
+
+		totalDomains := len(domains)
+		expiringSoon := 0
+		expired := 0
+
+		for _, d := range domains {
+			daysLeft := int(time.Until(d.ExpiryDate).Hours() / 24)
+			if daysLeft < 0 {
+				expired++
+			} else if daysLeft < 30 {
+				expiringSoon++
+			}
+		}
+
+		return c.Render(http.StatusOK, "dashboard", map[string]interface{}{
+			"User":         user,
+			"TotalDomains": totalDomains,
+			"ExpiringSoon": expiringSoon,
+			"Expired":      expired,
+		})
 	})
 
 	log.Printf("Starting server on port %d", cfg.Port)
 	if err := e.Start(cfg.ServerAddr()); err != nil {
 		log.Fatalf("Server failed: %v", err)
 	}
-}
-
-func buildEmailVerificationBanner(user *models.User) string {
-	if !user.EmailVerified {
-		return `
-        <div style="background: #fff3cd; padding: 10px; margin: 10px 0; border: 1px solid #ffc107;">
-            <strong>Warning:</strong> Your email is not verified.
-            Email notifications are disabled until you verify.
-            <a href="/verify/resend">Resend verification email</a>
-        </div>
-        `
-	}
-	return ""
 }

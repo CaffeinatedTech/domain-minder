@@ -1,0 +1,54 @@
+{{ define "domain_row" }}
+<table class="domain-table">
+    <thead>
+        <tr>
+            <th>Domain</th>
+            <th>Registrar</th>
+            <th>Expiry Date</th>
+            <th>Status</th>
+            <th>Days Left</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{ range .Domains }}
+        <tr>
+            <td>
+                <a href="/domains/{{ .Domain.ID }}">{{ .Domain.Name }}</a>
+            </td>
+            <td>{{ nullString .Domain.Registrar }}</td>
+            <td>{{ formatDate .Domain.ExpiryDate }}</td>
+            <td>
+                <span class="status-badge status-{{ .Domain.Status }}">{{ .Domain.Status }}</span>
+            </td>
+            <td>
+                <div class="progress-container">
+                    <div class="progress-bar {{ .Color }}" style="width: {{ .Percent }}%;"></div>
+                    <span class="progress-text">{{ .DaysLeft }} days</span>
+                </div>
+            </td>
+            <td>
+                <div class="action-buttons">
+                    <form method="POST" action="/domains/{{ .Domain.ID }}/check" style="display:inline;">
+                        <button type="submit" class="btn btn-small" hx-disable-element>
+                            Check
+                        </button>
+                    </form>
+                    <form method="POST" action="/domains/{{ .Domain.ID }}/delete" style="display:inline;">
+                        <button type="submit" class="btn btn-small btn-danger" hx-disable-element>
+                            Delete
+                        </button>
+                    </form>
+                </div>
+            </td>
+        </tr>
+        {{ else }}
+        <tr>
+            <td colspan="6" style="text-align:center; padding: 2rem;">
+                No domains added yet. <a href="/domains/new">Add your first domain</a>
+            </td>
+        </tr>
+        {{ end }}
+    </tbody>
+</table>
+{{ end }}

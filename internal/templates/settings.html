@@ -1,0 +1,76 @@
+{{ define "settings" }}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings - Domain Minder</title>
+    <script src="https://unpkg.com/htmx.org@2.0.7"></script>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>Domain Minder</h1>
+            <nav>
+                <a href="/dashboard">Dashboard</a>
+                <a href="/domains">Domains</a>
+                <a href="/settings">Settings</a>
+                <form method="POST" action="/logout" style="display:inline;">
+                    <button type="submit">Logout</button>
+                </form>
+            </nav>
+        </div>
+    </header>
+    <main class="container">
+        <h2>Settings</h2>
+
+        <div class="card">
+            <h3>Profile</h3>
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" value="{{ .User.Email }}" disabled>
+            </div>
+            <div class="form-group">
+                <label>Email Verified</label>
+                <input type="text" value="{{ if .User.EmailVerified }}Yes{{ else }}No{{ end }}" disabled>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>Notifications</h3>
+            <form method="POST" action="/settings/notifications">
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" name="notification_email" {{ if .User.NotificationEmail }}checked{{ end }}>
+                        Email Notifications
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" name="notification_telegram" {{ if .User.NotificationTelegram }}checked{{ end }}>
+                        Telegram Notifications
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label>Telegram Chat ID</label>
+                    <input type="text" name="telegram_chat_id" value="{{ .TelegramChatID }}" placeholder="Your Telegram Chat ID">
+                </div>
+                <button type="submit" class="btn">Save Notifications</button>
+            </form>
+        </div>
+
+        <div class="card">
+            <h3>Alert Thresholds</h3>
+            <form method="POST" action="/settings/thresholds">
+                <div class="form-group">
+                    <label>Days before expiry to alert (comma-separated)</label>
+                    <input type="text" name="thresholds" value="{{ .User.NotificationThresholds }}" placeholder="90, 60, 30, 14, 7, 3, 1">
+                </div>
+                <button type="submit" class="btn">Save Thresholds</button>
+            </form>
+        </div>
+    </main>
+</body>
+</html>
+{{ end }}

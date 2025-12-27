@@ -1,0 +1,43 @@
+{{ define "domains" }}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Domains - Domain Minder</title>
+    <script src="https://unpkg.com/htmx.org@2.0.7"></script>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>Domain Minder</h1>
+            <nav>
+                <a href="/dashboard">Dashboard</a>
+                <a href="/domains">Domains</a>
+                <a href="/settings">Settings</a>
+                <form method="POST" action="/logout" style="display:inline;">
+                    <button type="submit">Logout</button>
+                </form>
+            </nav>
+        </div>
+    </header>
+    <main class="container">
+        <div class="page-header">
+            <h2>Your Domains</h2>
+            <a href="/domains/new" class="btn">Add Domain</a>
+        </div>
+
+        {{ if .Message }}
+        <div class="alert">{{ .Message }}</div>
+        {{ end }}
+
+        <div class="card">
+            <div id="domains-list" hx-get="/domains/list" hx-trigger="load">
+                <p>Loading domains...</p>
+            </div>
+        </div>
+    </main>
+</body>
+</html>
+{{ end }}

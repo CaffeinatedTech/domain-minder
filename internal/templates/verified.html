@@ -1,0 +1,21 @@
+{{ define "verified" }}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Verified - Domain Minder</title>
+    <script src="https://unpkg.com/htmx.org@2.0.7"></script>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="card card-small" style="text-align:center;">
+            <h2 style="color:green;">Email Verified!</h2>
+            <p>Your email has been successfully verified.</p>
+            <a href="/dashboard" class="btn">Go to Dashboard</a>
+        </div>
+    </div>
+</body>
+</html>
+{{ end }}

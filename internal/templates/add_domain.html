@@ -1,0 +1,43 @@
+{{ define "add_domain" }}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Domain - Domain Minder</title>
+    <script src="https://unpkg.com/htmx.org@2.0.7"></script>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>Domain Minder</h1>
+            <nav>
+                <a href="/dashboard">Dashboard</a>
+                <a href="/domains">Domains</a>
+                <a href="/settings">Settings</a>
+                <form method="POST" action="/logout" style="display:inline;">
+                    <button type="submit">Logout</button>
+                </form>
+            </nav>
+        </div>
+    </header>
+    <main class="container">
+        <div class="card">
+            <h2>Add New Domain</h2>
+            <form method="POST" action="/domains" hx-post="/domains" hx-target="#result" hx-swap="innerHTML">
+                <div class="form-group">
+                    <label>Domain Name</label>
+                    <input type="text" name="name" placeholder="example.com" required>
+                </div>
+                <small>WHOIS lookup will be performed to find expiry date and registrar.</small>
+                <br><br>
+                <button type="submit" class="btn">Add Domain</button>
+                <a href="/domains" class="btn btn-secondary">Cancel</a>
+            </form>
+            <div id="result"></div>
+        </div>
+    </main>
+</body>
+</html>
+{{ end }}

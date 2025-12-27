@@ -20,42 +20,15 @@ func (h *SettingsHandler) ShowSettings(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusUnauthorized, "not authenticated")
 	}
 
-	emailStatus := "Verified"
-	if !user.EmailVerified {
-		emailStatus = `<span style="color: red;">Not Verified</span> <a href="/verify/resend">[Resend]</a>`
+	telegramChatID := ""
+	if user.TelegramChatID != nil {
+		telegramChatID = *user.TelegramChatID
 	}
 
-	return c.String(http.StatusOK, `
-    <html><body>
-    <h1>Settings</h1>
-    <h2>Profile</h2>
-    <p>Email: `+user.Email+` (`+emailStatus+`)</p>
-    <h2>Notification Preferences</h2>
-    <form method="POST" action="/settings/notifications">
-        <label>
-            <input type="checkbox" name="notification_email" `+boolChecked(user.NotificationEmail)+`>
-            Email notifications
-        </label><br>
-        <label>
-            <input type="checkbox" name="notification_telegram" `+boolChecked(user.NotificationTelegram)+`>
-            Telegram notifications
-        </label><br>
-        <label>
-            Telegram Chat ID: <input type="text" name="telegram_chat_id" value="`+nullString(user.TelegramChatID)+`">
-        </label><br>
-        <button type="submit">Save</button>
-    </form>
-    <h2>Notification Thresholds</h2>
-    <form method="POST" action="/settings/thresholds">
-        <label>
-            Days before expiry (comma-separated):
-            <input type="text" name="thresholds" value="`+user.NotificationThresholds+`">
-        </label><br>
-        <button type="submit">Save</button>
-    </form>
-    <a href="/dashboard">Back to Dashboard</a>
-    </body></html>
-    `)
+	return c.Render(http.StatusOK, "settings", map[string]interface{}{
+		"User":           user,
+		"TelegramChatID": telegramChatID,
+	})
 }
 
 func (h *SettingsHandler) UpdateNotifications(c echo.Context) error {

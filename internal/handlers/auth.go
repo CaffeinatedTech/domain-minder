@@ -90,18 +90,11 @@ func (h *AuthHandler) Register(c echo.Context) error {
 }
 
 func (h *AuthHandler) ShowRegister(c echo.Context) error {
-	return c.String(http.StatusOK, `
-    <html><body>
-    <h1>Register</h1>
-    <form method="POST" action="/register">
-        <label>Email: <input type="email" name="email" required></label><br>
-        <label>Password: <input type="password" name="password" required minlength="8"></label><br>
-        <label>Confirm Password: <input type="password" name="confirm_password" required></label><br>
-        <button type="submit">Register</button>
-    </form>
-    <a href="/login">Already have an account? Login</a>
-    </body></html>
-    `)
+	return c.Render(http.StatusOK, "register", nil)
+}
+
+func (h *AuthHandler) ShowLogin(c echo.Context) error {
+	return c.Render(http.StatusOK, "login", nil)
 }
 
 func (h *AuthHandler) Login(c echo.Context) error {
@@ -131,20 +124,6 @@ func (h *AuthHandler) Login(c echo.Context) error {
 	return c.Redirect(http.StatusSeeOther, "/dashboard")
 }
 
-func (h *AuthHandler) ShowLogin(c echo.Context) error {
-	return c.String(http.StatusOK, `
-    <html><body>
-    <h1>Login</h1>
-    <form method="POST" action="/login">
-        <label>Email: <input type="email" name="email" required></label><br>
-        <label>Password: <input type="password" name="password" required></label><br>
-        <button type="submit">Login</button>
-    </form>
-    <a href="/register">Create an account</a>
-    </body></html>
-    `)
-}
-
 func (h *AuthHandler) Logout(c echo.Context) error {
 	sess, _ := session.Get("session", c)
 	sess.Values["user_id"] = nil
@@ -170,13 +149,7 @@ func (h *AuthHandler) VerifyEmail(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to verify email")
 	}
 
-	return c.String(http.StatusOK, `
-    <html><body>
-    <h1>Email Verified!</h1>
-    <p>Your email has been successfully verified.</p>
-    <a href="/dashboard">Go to Dashboard</a>
-    </body></html>
-    `)
+	return c.Render(http.StatusOK, "verified", nil)
 }
 
 func (h *AuthHandler) ResendVerification(c echo.Context) error {

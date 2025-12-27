@@ -1,16 +1,17 @@
 package handlers
 
 import (
-	"github.com/CaffeinatedTech/domain-minder/internal/database"
-	"github.com/CaffeinatedTech/domain-minder/internal/middleware"
-	"github.com/CaffeinatedTech/domain-minder/internal/models"
-	"github.com/CaffeinatedTech/domain-minder/internal/services"
-	"github.com/labstack/echo/v4"
 	"net/http"
 	"net/url"
 	"regexp"
 	"strconv"
 	"time"
+
+	"github.com/CaffeinatedTech/domain-minder/internal/database"
+	"github.com/CaffeinatedTech/domain-minder/internal/middleware"
+	"github.com/CaffeinatedTech/domain-minder/internal/models"
+	"github.com/CaffeinatedTech/domain-minder/internal/services"
+	"github.com/labstack/echo/v4"
 )
 
 type DomainHandler struct {
@@ -32,70 +33,43 @@ func (h *DomainHandler) ListDomains(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get domains")
 	}
 
-	var html string
-	if len(domains) == 0 {
-		html = `<p>No domains added yet.</p>`
-	} else {
-		html = `<table border="1"><tr><th>Domain</th><th>Registrar</th><th>Expiry</th><th>Days Left</th><th>Status</th><th>Actions</th></tr>`
-		for _, d := range domains {
-			daysLeft := int(time.Until(d.ExpiryDate).Hours() / 24)
-			status := d.Status
-			if daysLeft < 0 {
-				status = "expired"
-			}
-			html += `<tr>
-				<td>` + d.Name + `</td>
-				<td>` + nullString(d.Registrar) + `</td>
-				<td>` + d.ExpiryDate.Format("2006-01-02") + `</td>
-				<td>` + strconv.Itoa(daysLeft) + `</td>
-				<td>` + status + `</td>
-				<td>
-					<form method="POST" action="/domains/` + strconv.Itoa(d.ID) + `/delete" style="display:inline;">
-						<button type="submit" onclick="return confirm('Delete this domain?')">Delete</button>
-					</form>
-				</td>
-			</tr>`
-		}
-		html += `</table>`
-	}
-
-	message := c.QueryParam("message")
-	if message != "" {
-		message = `<p style="color: green;">` + message + `</p>`
-	}
-
-	return c.String(http.StatusOK, `
-    <html><body>
-    <h1>Your Domains</h1>
-    `+message+`
-    `+html+`
-    <h2>Add New Domain</h2>
-    <form method="POST" action="/domains">
-        <label>Domain Name: <input type="text" name="name" placeholder="example.com" required></label><br>
-        <button type="submit">Add Domain</button>
-    </form>
-    <p><small>WHOIS lookup will be performed to find expiry date and registrar.</small></p>
-    <a href="/dashboard">Back to Dashboard</a>
-    </body></html>
-    `)
+	return c.Render(http.StatusOK, "domains", map[string]interface{}{
+		"TotalDomains": len(domains),
+	})
 }
 
 func (h *DomainHandler) ShowAddDomain(c echo.Context) error {
+	return c.Render(http.StatusOK, "add_domain", nil)
+}
+
+func (h *DomainHandler) ListDomainsPartial(c echo.Context) error {
 	user := middleware.GetCurrentUser(c)
 	if user == nil {
-		return echo.NewHTTPError(http.StatusUnauthorized, "not authenticated")
+		return c.String(http.StatusUnauthorized, "not authenticated")
 	}
 
-	return c.String(http.StatusOK, `
-    <html><body>
-    <h1>Add Domain</h1>
-    <form method="POST" action="/domains">
-        <label>Domain Name: <input type="text" name="name" required></label><br>
-        <button type="submit">Add Domain</button>
-    </form>
-    <a href="/domains">Cancel</a>
-    </body></html>
-    `)
+	domains, err := database.GetDomainsByUserID(c.Request().Context(), user.ID)
+	if err != nil {
+		return c.String(http.StatusInternalServerError, "failed to get domains")
+	}
+
+	domainRows := make([]map[string]interface{}, 0, len(domains))
+	for _, d := range domains {
+		daysLeft := int(time.Until(d.ExpiryDate).Hours() / 24)
+		colorClass := getColorClass(daysLeft)
+		percent := getPercent(daysLeft, 365)
+
+		domainRows = append(domainRows, map[string]interface{}{
+			"Domain":   d,
+			"DaysLeft": daysLeft,
+			"Color":    colorClass,
+			"Percent":  percent,
+		})
+	}
+
+	return c.Render(http.StatusOK, "domain_row", map[string]interface{}{
+		"Domains": domainRows,
+	})
 }
 
 func (h *DomainHandler) AddDomain(c echo.Context) error {
@@ -176,26 +150,9 @@ func (h *DomainHandler) ShowEditDomain(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusForbidden, "not authorized")
 	}
 
-	return c.String(http.StatusOK, `
-    <html><body>
-    <h1>Edit Domain</h1>
-    <form method="POST" action="/domains/`+strconv.Itoa(domain.ID)+`">
-        <label>Domain Name: <input type="text" name="name" value="`+domain.Name+`" required></label><br>
-        <label>Registrar: <input type="text" name="registrar" value="`+nullString(domain.Registrar)+`"></label><br>
-        <label>Expiry Date: <input type="date" name="expiry_date" value="`+domain.ExpiryDate.Format("2006-01-02")+`" required></label><br>
-        <label>Status:
-            <select name="status">
-                <option value="active"`+selected(domain.Status, "active")+`>Active</option>
-                <option value="expired"`+selected(domain.Status, "expired")+`>Expired</option>
-                <option value="pending"`+selected(domain.Status, "pending")+`>Pending</option>
-            </select>
-        </label><br>
-        <label>Notes:<br><textarea name="notes">`+nullString(domain.Notes)+`</textarea></label><br>
-        <button type="submit">Save</button>
-    </form>
-    <a href="/domains">Cancel</a>
-    </body></html>
-    `)
+	return c.Render(http.StatusOK, "edit_domain", map[string]interface{}{
+		"Domain": domain,
+	})
 }
 
 func (h *DomainHandler) UpdateDomain(c echo.Context) error {
@@ -266,6 +223,11 @@ func (h *DomainHandler) DeleteDomain(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to delete domain")
 	}
 
+	isHTMX := c.Request().Header.Get("HX-Request") == "true"
+	if isHTMX {
+		return c.String(http.StatusOK, "")
+	}
+
 	return c.Redirect(http.StatusSeeOther, "/domains")
 }
 
@@ -315,4 +277,31 @@ func selected(current, value string) string {
 		return " selected"
 	}
 	return ""
+}
+
+func getColorClass(daysLeft int) string {
+	switch {
+	case daysLeft < 0:
+		return "progress-red"
+	case daysLeft < 7:
+		return "progress-critical"
+	case daysLeft < 14:
+		return "progress-red"
+	case daysLeft < 30:
+		return "progress-orange"
+	case daysLeft < 60:
+		return "progress-yellow"
+	default:
+		return "progress-green"
+	}
+}
+
+func getPercent(daysLeft, maxDays int) float64 {
+	if daysLeft <= 0 {
+		return 100
+	}
+	if daysLeft > maxDays {
+		return 5
+	}
+	return float64(daysLeft) / float64(maxDays) * 100
 }

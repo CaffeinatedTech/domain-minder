@@ -1,0 +1,32 @@
+{{ define "register" }}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - Domain Minder</title>
+    <script src="https://unpkg.com/htmx.org@2.0.7"></script>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="card card-small">
+            <h2>Create Account</h2>
+            <form method="POST" action="/register">
+                <label>Email</label>
+                <input type="email" name="email" required>
+                <label>Password</label>
+                <input type="password" name="password" required minlength="8">
+                <small>Minimum 8 characters</small>
+                <label>Confirm Password</label>
+                <input type="password" name="confirm_password" required>
+                <button type="submit" class="btn">Register</button>
+            </form>
+            <p class="links">
+                Already have an account? <a href="/login">Login</a>
+            </p>
+        </div>
+    </div>
+</body>
+</html>
+{{ end }}
