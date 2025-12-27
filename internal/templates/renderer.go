@@ -61,6 +61,18 @@ func NewRenderer(dir string) *Renderer {
 func (t *Renderer) Render(w io.Writer, name string, data interface{}, c echo.Context) error {
 	if viewContext, isMap := data.(map[string]interface{}); isMap {
 		viewContext["reverse"] = c.Echo().Reverse
+		// Inject CSRF token
+		if csrf := c.Get("csrf"); csrf != nil {
+			viewContext["csrf"] = csrf
+		}
+	} else if data == nil {
+		// Create map if data is nil
+		viewContext := make(map[string]interface{})
+		viewContext["reverse"] = c.Echo().Reverse
+		if csrf := c.Get("csrf"); csrf != nil {
+			viewContext["csrf"] = csrf
+		}
+		data = viewContext
 	}
 	return t.templates.ExecuteTemplate(w, name, data)
 }

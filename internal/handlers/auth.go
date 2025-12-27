@@ -24,20 +24,24 @@ func NewAuthHandler(cfg *config.Config, m *mailer.Service) *AuthHandler {
 }
 
 func (h *AuthHandler) Register(c echo.Context) error {
+	// Honeypot check
+	if c.FormValue("website_url") != "" {
+		return c.Render(http.StatusBadRequest, "register", map[string]interface{}{"Error": "Registrations closed"})
+	}
 	email := c.FormValue("email")
 	password := c.FormValue("password")
 	confirmPassword := c.FormValue("confirm_password")
 
 	if email == "" || password == "" {
-		return c.String(http.StatusBadRequest, "Email and password are required")
+		return c.Render(http.StatusBadRequest, "register", map[string]interface{}{"Error": "Email and password are required"})
 	}
 
 	if password != confirmPassword {
-		return c.String(http.StatusBadRequest, "Passwords do not match")
+		return c.Render(http.StatusBadRequest, "register", map[string]interface{}{"Error": "Passwords do not match"})
 	}
 
 	if len(password) < 8 {
-		return c.String(http.StatusBadRequest, "Password must be at least 8 characters")
+		return c.Render(http.StatusBadRequest, "register", map[string]interface{}{"Error": "Password must be at least 8 characters"})
 	}
 
 	existing, err := database.GetUserByEmail(c.Request().Context(), email)
@@ -45,7 +49,7 @@ func (h *AuthHandler) Register(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "database error")
 	}
 	if existing != nil {
-		return c.String(http.StatusBadRequest, "Email already registered")
+		return c.Render(http.StatusBadRequest, "register", map[string]interface{}{"Error": "Email already registered"})
 	}
 
 	hash, err := auth.HashPassword(password)
@@ -97,11 +101,16 @@ func (h *AuthHandler) ShowLogin(c echo.Context) error {
 }
 
 func (h *AuthHandler) Login(c echo.Context) error {
+	// Honeypot check
+	if c.FormValue("website_url") != "" {
+		// Silent failure - return generic invalid credentials message to not alert the attacker
+		return c.Render(http.StatusUnauthorized, "login", map[string]interface{}{"Error": "Invalid email or password"})
+	}
 	email := c.FormValue("email")
 	password := c.FormValue("password")
 
 	if email == "" || password == "" {
-		return c.String(http.StatusBadRequest, "Email and password are required")
+		return c.Render(http.StatusBadRequest, "login", map[string]interface{}{"Error": "Email and password are required"})
 	}
 
 	user, err := database.GetUserByEmail(c.Request().Context(), email)
@@ -109,11 +118,11 @@ func (h *AuthHandler) Login(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "database error")
 	}
 	if user == nil {
-		return c.String(http.StatusUnauthorized, "Invalid email or password")
+		return c.Render(http.StatusUnauthorized, "login", map[string]interface{}{"Error": "Invalid email or password"})
 	}
 
 	if !auth.CheckPassword(password, user.PasswordHash) {
-		return c.String(http.StatusUnauthorized, "Invalid email or password")
+		return c.Render(http.StatusUnauthorized, "login", map[string]interface{}{"Error": "Invalid email or password"})
 	}
 
 	sess, _ := session.Get("session", c)
@@ -133,7 +142,7 @@ func (h *AuthHandler) Logout(c echo.Context) error {
 func (h *AuthHandler) VerifyEmail(c echo.Context) error {
 	token := c.QueryParam("token")
 	if token == "" {
-		return c.String(http.StatusBadRequest, "Verification token required")
+		return c.Render(http.StatusBadRequest, "login", map[string]interface{}{"Error": "Verification token required"})
 	}
 
 	user, err := database.GetUserByVerificationToken(c.Request().Context(), token)
@@ -141,7 +150,7 @@ func (h *AuthHandler) VerifyEmail(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "database error")
 	}
 	if user == nil {
-		return c.String(http.StatusBadRequest, "Invalid or expired verification token")
+		return c.Render(http.StatusBadRequest, "login", map[string]interface{}{"Error": "Invalid or expired verification token"})
 	}
 
 	if err := database.UpdateUserVerification(c.Request().Context(), user.ID, true); err != nil {
@@ -158,7 +167,7 @@ func (h *AuthHandler) ResendVerification(c echo.Context) error {
 	}
 
 	if user.EmailVerified {
-		return c.String(http.StatusBadRequest, "Email already verified")
+		return c.Render(http.StatusBadRequest, "dashboard", map[string]interface{}{"Error": "Email already verified"})
 	}
 
 	token, err := auth.GenerateVerificationToken()

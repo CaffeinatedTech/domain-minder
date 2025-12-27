@@ -54,6 +54,10 @@ func main() {
 	e.Use(echomw.Recover())
 	e.Use(echomw.RequestID())
 
+	e.Use(echomw.CSRFWithConfig(echomw.CSRFConfig{
+		TokenLookup: "form:csrf",
+	}))
+
 	middleware.SetupSessionMiddleware(e, cfg.SessionSecret)
 
 	e.Renderer = templates.NewRenderer("internal/templates")
@@ -76,10 +80,13 @@ func main() {
 
 	domainHandler := handlers.NewDomainHandler(whoisService)
 
+	// Rate limiter for auth routes
+	// 2 requests per second burst is stricter than default but allows for normal human interaction.
+
 	e.GET("/register", authHandler.ShowRegister)
-	e.POST("/register", authHandler.Register)
+	e.POST("/register", authHandler.Register, echomw.RateLimiter(echomw.NewRateLimiterMemoryStore(2)))
 	e.GET("/login", authHandler.ShowLogin)
-	e.POST("/login", authHandler.Login)
+	e.POST("/login", authHandler.Login, echomw.RateLimiter(echomw.NewRateLimiterMemoryStore(2)))
 	e.GET("/verify", authHandler.VerifyEmail)
 
 	protected := e.Group("")

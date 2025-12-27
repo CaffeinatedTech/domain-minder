@@ -31,6 +31,7 @@
             </div>
             <div class="card-body">
                 <form method="POST" action="/domains/{{ .Domain.ID }}">
+                    <input type="hidden" name="csrf" value="{{.csrf}}">
                     <div class="form-group">
                         <label>Domain Name</label>
                         <input type="text" name="name" value="{{ .Domain.Name }}" required>

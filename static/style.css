@@ -586,3 +586,14 @@ small {
     outline: none !important;
     box-shadow: none !important;
 }
+
+/* Honeypot field - keeping it hidden from real users */
+.website-url-field {
+    opacity: 0;
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 0;
+    width: 0;
+    z-index: -1;
+}
