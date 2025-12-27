@@ -63,6 +63,14 @@ func main() {
 		return c.String(http.StatusOK, "OK")
 	})
 
+	e.GET("/", func(c echo.Context) error {
+		user := middleware.GetCurrentUser(c)
+		if user != nil {
+			return c.Redirect(http.StatusSeeOther, "/dashboard")
+		}
+		return c.Redirect(http.StatusSeeOther, "/login")
+	})
+
 	authHandler := handlers.NewAuthHandler(cfg, mailerService)
 	settingsHandler := handlers.NewSettingsHandler()
 
