@@ -372,8 +372,8 @@ func (h *AuthHandler) ResendVerification(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to generate token")
 	}
 
-	user.EmailVerificationToken = &token
-	if err := database.UpdateUser(c.Request().Context(), user); err != nil {
+	expires := time.Now().Add(24 * time.Hour)
+	if err := database.UpdateUserVerificationToken(c.Request().Context(), user.ID, token, expires); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to update user")
 	}
 

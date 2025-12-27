@@ -99,3 +99,11 @@ func UpdateUser(ctx context.Context, user *models.User) error {
 		time.Now(), user.ID)
 	return err
 }
+
+func UpdateUserVerificationToken(ctx context.Context, id int, token string, expires time.Time) error {
+	_, err := DB.ExecContext(ctx, `
+        UPDATE users SET email_verification_token = ?, email_verification_expires = ?, updated_at = ?
+        WHERE id = ?
+    `, token, expires, time.Now(), id)
+	return err
+}

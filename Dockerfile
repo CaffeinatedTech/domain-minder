@@ -12,19 +12,24 @@ RUN go mod download
 # Copy source code
 COPY . .
 
+# Install C compiler for CGO-enabled SQLite build
+RUN apk add --no-cache gcc musl-dev
+
 # Build binary
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o domain-minder ./cmd/server/
+RUN CGO_ENABLED=1 GOOS=linux go build -a -o domain-minder ./cmd/server/
 
 # Run stage
 FROM alpine:3.19
 
-RUN apk --no-cache add ca-certificates
+RUN apk --no-cache add ca-certificates curl
 
 WORKDIR /app
 
 # Copy binary from builder
 COPY --from=builder /app/domain-minder .
 COPY --from=builder /app/.env.example .
+COPY --from=builder /app/internal/templates internal/templates
+COPY --from=builder /app/static static
 
 # Create data directory
 RUN mkdir -p data
