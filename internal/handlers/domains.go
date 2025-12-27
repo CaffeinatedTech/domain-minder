@@ -109,7 +109,7 @@ func (h *DomainHandler) AddDomain(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid domain name")
 	}
 
-	result, err := h.whoisService.Lookup(domainName)
+	result, err := h.whoisService.Lookup(c.Request().Context(), domainName)
 	if err != nil {
 		result = &services.WHOISResult{
 			DomainName: domainName,
@@ -291,7 +291,7 @@ func (h *DomainHandler) CheckDomain(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusForbidden, "not authorized")
 	}
 
-	result, err := h.whoisService.Lookup(domain.Name)
+	result, err := h.whoisService.Lookup(c.Request().Context(), domain.Name)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "WHOIS lookup failed: "+err.Error())
 	}
