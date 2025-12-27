@@ -10,6 +10,7 @@ import (
 	"github.com/CaffeinatedTech/domain-minder/internal/handlers"
 	"github.com/CaffeinatedTech/domain-minder/internal/middleware"
 	"github.com/CaffeinatedTech/domain-minder/internal/models"
+	"github.com/CaffeinatedTech/domain-minder/internal/services"
 	"github.com/labstack/echo/v4"
 	echomw "github.com/labstack/echo/v4/middleware"
 )
@@ -45,6 +46,9 @@ func main() {
 	authHandler := handlers.NewAuthHandler(cfg)
 	settingsHandler := handlers.NewSettingsHandler()
 
+	whoisService := services.NewWHOISService()
+	domainHandler := handlers.NewDomainHandler(whoisService)
+
 	e.GET("/register", authHandler.ShowRegister)
 	e.POST("/register", authHandler.Register)
 	e.GET("/login", authHandler.ShowLogin)
@@ -59,6 +63,14 @@ func main() {
 	protected.POST("/settings/notifications", settingsHandler.UpdateNotifications)
 	protected.POST("/settings/thresholds", settingsHandler.UpdateThresholds)
 
+	protected.GET("/domains", domainHandler.ListDomains)
+	protected.GET("/domains/new", domainHandler.ShowAddDomain)
+	protected.POST("/domains", domainHandler.AddDomain)
+	protected.GET("/domains/:id", domainHandler.ShowEditDomain)
+	protected.POST("/domains/:id", domainHandler.UpdateDomain)
+	protected.POST("/domains/:id/delete", domainHandler.DeleteDomain)
+	protected.POST("/domains/:id/check", domainHandler.CheckDomain)
+
 	protected.GET("/dashboard", func(c echo.Context) error {
 		user := middleware.GetCurrentUser(c)
 		return c.String(http.StatusOK, `
@@ -66,7 +78,8 @@ func main() {
         <h1>Dashboard</h1>
         <p>Welcome, `+user.Email+`!</p>
         `+buildEmailVerificationBanner(user)+`
-        <a href="/settings">Settings</a> |
+        <p><a href="/domains">Manage Domains</a></p>
+        <p><a href="/settings">Settings</a></p>
         <form method="POST" action="/logout" style="display:inline;">
             <button type="submit">Logout</button>
         </form>
